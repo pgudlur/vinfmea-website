@@ -51,7 +51,7 @@ export function ContactForm() {
       className="bg-[var(--bg)] rounded-xl p-8 border border-gray-200"
     >
       {/* Web3Forms access key — submissions emailed to support@vinreliability.net */}
-      <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE" />
+      <input type="hidden" name="access_key" value="3fe9a5b7-c1ce-4e2c-9964-c99c5374ddfe" />
       <input type="hidden" name="subject" value="vinFMEA Pro — New Contact Form Submission" />
       <input type="hidden" name="from_name" value="vinFMEA Website" />
       {/* Honeypot spam protection */}
