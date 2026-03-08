@@ -52,8 +52,7 @@ export function Footer() {
             <h4 className="text-white font-semibold text-sm mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/#contact" className="hover:text-white transition-colors">Request a Demo</Link></li>
-              <li><a href="mailto:sales@vinfmea.com" className="hover:text-white transition-colors">sales@vinfmea.com</a></li>
-              <li><a href="mailto:support@vinfmea.com" className="hover:text-white transition-colors">support@vinfmea.com</a></li>
+              <li><a href="mailto:support@vinreliability.net" className="hover:text-white transition-colors">support@vinreliability.net</a></li>
             </ul>
           </div>
         </div>

@@ -39,7 +39,7 @@ export function ContactForm() {
         setError("Something went wrong. Please try again or email us directly.");
       }
     } catch {
-      setError("Network error. Please try again or email sales@vinfmea.com directly.");
+      setError("Network error. Please try again or email support@vinreliability.net directly.");
     } finally {
       setSubmitting(false);
     }
@@ -50,7 +50,7 @@ export function ContactForm() {
       onSubmit={handleSubmit}
       className="bg-[var(--bg)] rounded-xl p-8 border border-gray-200"
     >
-      {/* Web3Forms access key — submissions emailed to sales@vinfmea.com */}
+      {/* Web3Forms access key — submissions emailed to support@vinreliability.net */}
       <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE" />
       <input type="hidden" name="subject" value="vinFMEA Pro — New Contact Form Submission" />
       <input type="hidden" name="from_name" value="vinFMEA Website" />
