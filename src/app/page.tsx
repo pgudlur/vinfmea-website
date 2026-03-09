@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ContactForm } from "@/components/ContactForm";
+import { ScreenshotShowcase } from "@/components/ScreenshotShowcase";
+import { ProtectedScreenshot } from "@/components/ProtectedScreenshot";
 
 const features = [
   {
@@ -134,25 +136,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* App preview mockup */}
+            {/* App preview — real screenshot */}
             <div className="hidden lg:block">
-              <div className="relative rounded-xl overflow-hidden shadow-2xl border border-white/10">
-                <div className="bg-[#1e293b] px-4 py-2 flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                  </div>
-                  <span className="text-xs text-gray-400 ml-2">vinFMEA Pro v4.0.0</span>
-                </div>
-                <div className="bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] p-6 aspect-video flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-6xl mb-3 opacity-80">{"\uD83D\uDEE1\uFE0F"}</div>
-                    <p className="text-[var(--navy)] font-bold text-lg">SFMEA &bull; DFMEA &bull; PFMEA &bull; Control Plan</p>
-                    <p className="text-gray-500 text-sm mt-1">Interactive Risk Matrix &bull; ISO 26262 Safety Analysis</p>
-                  </div>
-                </div>
-              </div>
+              <ProtectedScreenshot
+                src="/screenshots/pfmea.png"
+                alt="vinFMEA Pro PFMEA spreadsheet view"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -193,6 +183,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== SCREENSHOT SHOWCASE ===== */}
+      <ScreenshotShowcase />
 
       {/* ===== TRACEABILITY ===== */}
       <section className="py-20 lg:py-28 bg-white">

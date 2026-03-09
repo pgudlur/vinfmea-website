@@ -25,3 +25,38 @@ body {
   color: var(--text);
   background: var(--white);
 }
+
+/* Screenshot image protection */
+.protected-image {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.screenshot-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.screenshot-wrapper::after {
+  content: "vinFMEA Pro";
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  z-index: 10;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Block right-click save on screenshots */
+.screenshot-wrapper img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
