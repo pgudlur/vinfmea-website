@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { X, ChevronDown, ChevronRight, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import type { FmeaType } from "@/lib/types";
 import {
@@ -33,18 +33,61 @@ interface FmeaDialogProps {
 // ── Calculation helpers ────────────────────────────────────
 
 function calcAP(s: number, o: number, d: number): string {
-  const rpn = s * o * d;
-  if (s >= 9 || (s >= 7 && o >= 4 && d >= 4) || rpn >= 200) return "H";
-  if (rpn >= 80 || (s >= 5 && o >= 4)) return "M";
+  // AIAG-VDA Action Priority logic table — exact port from desktop constants.py
+  s = Math.max(1, Math.min(10, Math.floor(s || 1)));
+  o = Math.max(1, Math.min(10, Math.floor(o || 1)));
+  d = Math.max(1, Math.min(10, Math.floor(d || 1)));
+
+  // Safety-critical: S >= 9 always requires attention
+  if (s >= 9) {
+    if (o >= 4 || d >= 4) return "H";
+    if (o >= 2 && d >= 2) return "H";
+    return "M";
+  }
+
+  // High severity: S >= 7
+  if (s >= 7) {
+    if (o >= 5 && d >= 5) return "H";
+    if (o >= 4 && d >= 3) return "H";
+    if (o >= 7) return "H";
+    if (o >= 3 || d >= 3) return "M";
+    return "L";
+  }
+
+  // Moderate severity: S >= 5
+  if (s >= 5) {
+    if (o >= 7 && d >= 7) return "H";
+    if (o >= 8) return "H";
+    if (o >= 4 || d >= 5) return "M";
+    return "L";
+  }
+
+  // Low severity: S >= 3
+  if (s >= 3) {
+    if (o >= 8 && d >= 7) return "H";
+    if (o >= 5 || d >= 6) return "M";
+    return "L";
+  }
+
+  // Very low severity: S 1-2
   return "L";
 }
 
-function calcCriticality(s: number, o: number): string {
-  const product = s * o;
-  if (product >= 36) return "Critical";
-  if (product >= 25) return "High";
-  if (product >= 16) return "Medium";
-  return "Low";
+function calcCriticality(rpn: number): string {
+  // RPN-based criticality — exact match with desktop constants.py get_criticality()
+  if (rpn <= 50) return "Low";
+  if (rpn <= 100) return "Medium";
+  if (rpn <= 200) return "High";
+  return "Critical";
+}
+
+function calcCTQ(s: number, o: number): string {
+  // CTQ status for PFMEA — exact match with desktop constants.py get_ctq_status()
+  if (s <= 0 || o <= 0) return "";
+  const soValue = s * o;
+  if (soValue >= 36) return "CTQ";
+  if (soValue >= 16) return "Consider CTQ";
+  return "No CTQ";
 }
 
 // ── Collapsible Section ────────────────────────────────────
@@ -84,19 +127,32 @@ function Section({
 function FormField({
   label,
   required,
+  tooltip,
+  error,
   children,
 }: {
   label: string;
   required?: boolean;
+  tooltip?: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-gray-600">
+      <span className="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
+        {tooltip && (
+          <span
+            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-[8px] font-bold text-gray-500 cursor-help shrink-0"
+            title={tooltip}
+          >
+            ?
+          </span>
+        )}
       </span>
       {children}
+      {error && <span className="mt-0.5 block text-[11px] text-red-500">{error}</span>}
     </label>
   );
 }
@@ -123,16 +179,34 @@ export default function FmeaDialog({
   const isSfmea = fmeaType === "sfmea";
   const isDfmea = fmeaType === "dfmea";
 
+  // Default values for new entries — ensures server receives proper integers
+  const getDefaults = () => {
+    if (entry) return entry as Record<string, unknown>;
+    if (isControlPlan) {
+      return { step_id: "", process_step: "", special_char_class: "" };
+    }
+    return {
+      step_id: "",
+      severity: 1,
+      occurrence: 1,
+      detection: 1,
+      failure_mode: "",
+      failure_effect: "",
+      failure_cause: "",
+      action_status: "",
+    };
+  };
+
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
-    defaultValues: (entry as Record<string, unknown>) || {},
+    defaultValues: getDefaults(),
   });
 
   // Reset form when entry changes or dialog opens
   useEffect(() => {
     if (open) {
-      reset(entry || {});
+      reset(getDefaults());
     }
-  }, [open, entry, reset]);
+  }, [open, entry, reset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Watch S, O, D for real-time RPN calculation (for non-control-plan types)
   const severity = Number(watch("severity") || 1);
@@ -144,21 +218,64 @@ export default function FmeaDialog({
 
   const rpn = useMemo(() => severity * occurrence * detection, [severity, occurrence, detection]);
   const ap = useMemo(() => calcAP(severity, occurrence, detection), [severity, occurrence, detection]);
-  const crit = useMemo(() => calcCriticality(severity, occurrence), [severity, occurrence]);
+  const crit = useMemo(() => calcCriticality(rpn), [rpn]);
+  const initCtq = useMemo(() => calcCTQ(severity, occurrence), [severity, occurrence]);
+  const revCtq = useMemo(
+    () => (newSeverity > 0 && newOccurrence > 0 ? calcCTQ(newSeverity, newOccurrence) : ""),
+    [newSeverity, newOccurrence]
+  );
   const newRpn = useMemo(() => newSeverity * newOccurrence * newDetection, [newSeverity, newOccurrence, newDetection]);
   const newAp = useMemo(
     () => (newSeverity && newOccurrence && newDetection ? calcAP(newSeverity, newOccurrence, newDetection) : ""),
     [newSeverity, newOccurrence, newDetection]
   );
 
+  const isPfmea = fmeaType === "pfmea";
+
   const onSubmit = (data: Record<string, unknown>) => {
     if (!isControlPlan) {
+      // Ensure all numeric fields are sent as proper integers
       data.severity = Number(data.severity) || 1;
       data.occurrence = Number(data.occurrence) || 1;
       data.detection = Number(data.detection) || 1;
       if (data.new_severity) data.new_severity = Number(data.new_severity);
+      else data.new_severity = 0;
       if (data.new_occurrence) data.new_occurrence = Number(data.new_occurrence);
+      else data.new_occurrence = 0;
       if (data.new_detection) data.new_detection = Number(data.new_detection);
+      else data.new_detection = 0;
+
+      // Computed fields
+      const s = data.severity as number;
+      const o = data.occurrence as number;
+      const d = data.detection as number;
+      data.rpn = s * o * d;
+      data.action_priority = calcAP(s, o, d);
+      data.criticality = calcCriticality(s * o * d);
+
+      const ns = data.new_severity as number;
+      const no_ = data.new_occurrence as number;
+      const nd = data.new_detection as number;
+      if (ns && no_ && nd) {
+        data.new_rpn = ns * no_ * nd;
+        data.new_action_priority = calcAP(ns, no_, nd);
+      } else {
+        data.new_rpn = 0;
+        data.new_action_priority = "";
+      }
+
+      // CTQ fields for PFMEA
+      if (isPfmea) {
+        data.init_ctq = calcCTQ(s, o);
+        data.rev_ctq = (ns > 0 && no_ > 0) ? calcCTQ(ns, no_) : "";
+      }
+
+      // Remove empty strings for optional fields to avoid server validation errors
+      Object.keys(data).forEach((key) => {
+        if (data[key] === "") delete data[key];
+      });
+      // But step_id is always required
+      if (!data.step_id) data.step_id = "";
     }
     onSave(data);
   };
@@ -221,35 +338,32 @@ export default function FmeaDialog({
               /* ── Control Plan Form ──────────────────────── */
               <>
                 <Section title="Identification">
-                  <FormField label="Step ID" required>
+                  <FormField label="Step ID" required tooltip="Unique identifier for the control plan step. Use CP-001 format for traceability." error={errors.step_id ? "Step ID is required" : undefined}>
                     <input
                       {...register("step_id", { required: true })}
-                      className={inputClass}
+                      className={`${inputClass} ${errors.step_id ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
                       placeholder="CP-001"
                     />
-                    {errors.step_id && (
-                      <span className="mt-1 text-xs text-red-500">Step ID is required</span>
-                    )}
                   </FormField>
-                  <FormField label="Process Step">
-                    <input {...register("process_step")} className={inputClass} />
+                  <FormField label="Process Step" tooltip="Name of the manufacturing or assembly process step">
+                    <input {...register("process_step")} className={inputClass} placeholder="e.g. Final Assembly" />
                   </FormField>
-                  <FormField label="Machine/Device">
-                    <input {...register("machine_device")} className={inputClass} />
+                  <FormField label="Machine/Device" tooltip="Machine, tool, or device used for this process step">
+                    <input {...register("machine_device")} className={inputClass} placeholder="e.g. Torque wrench, CNC mill" />
                   </FormField>
-                  <FormField label="Characteristic Number">
-                    <input {...register("characteristic_number")} className={inputClass} />
+                  <FormField label="Characteristic Number" tooltip="Reference number linking to the engineering drawing">
+                    <input {...register("characteristic_number")} className={inputClass} placeholder="e.g. 1.1, 2.3" />
                   </FormField>
                 </Section>
 
                 <Section title="Characteristics">
-                  <FormField label="Product Characteristic">
-                    <input {...register("product_characteristic")} className={inputClass} />
+                  <FormField label="Product Characteristic" tooltip="Measurable product feature or property (dimension, weight, hardness, etc.)">
+                    <input {...register("product_characteristic")} className={inputClass} placeholder="e.g. Bolt torque, Surface roughness" />
                   </FormField>
-                  <FormField label="Process Characteristic">
-                    <input {...register("process_characteristic")} className={inputClass} />
+                  <FormField label="Process Characteristic" tooltip="Process parameter that affects the product characteristic">
+                    <input {...register("process_characteristic")} className={inputClass} placeholder="e.g. Clamping force, Temperature" />
                   </FormField>
-                  <FormField label="Special Char Class">
+                  <FormField label="Special Char Class" tooltip="Classification: CC/S=Critical, SC/R=Significant, HI=High Impact, F/A=Fit/Appearance">
                     <select {...register("special_char_class")} className={selectClass}>
                       {SPECIAL_CHAR_CLASSES.map((c) => (
                         <option key={c} value={c}>
@@ -261,34 +375,34 @@ export default function FmeaDialog({
                 </Section>
 
                 <Section title="Specifications & Control">
-                  <FormField label="Specification/Tolerance">
-                    <input {...register("specification_tolerance")} className={inputClass} />
+                  <FormField label="Specification/Tolerance" tooltip="Engineering specification or tolerance range for the characteristic">
+                    <input {...register("specification_tolerance")} className={inputClass} placeholder="e.g. 25 ± 2 Nm, Ra 0.8 µm" />
                   </FormField>
-                  <FormField label="Evaluation/Measurement">
-                    <input {...register("evaluation_measurement")} className={inputClass} />
+                  <FormField label="Evaluation/Measurement" tooltip="Measurement technique, gauge, or equipment used for inspection">
+                    <input {...register("evaluation_measurement")} className={inputClass} placeholder="e.g. Digital torque analyzer, CMM" />
                   </FormField>
                   <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Sample Size">
-                      <input {...register("sample_size")} className={inputClass} />
+                    <FormField label="Sample Size" tooltip="Number of samples to inspect per check">
+                      <input {...register("sample_size")} className={inputClass} placeholder="e.g. 5, 100%" />
                     </FormField>
-                    <FormField label="Sample Frequency">
-                      <input {...register("sample_frequency")} className={inputClass} />
+                    <FormField label="Sample Frequency" tooltip="How often the inspection is performed">
+                      <input {...register("sample_frequency")} className={inputClass} placeholder="e.g. Every hour, per batch" />
                     </FormField>
                   </div>
-                  <FormField label="Control Method">
-                    <textarea {...register("control_method")} className={textareaClass} rows={2} />
+                  <FormField label="Control Method" tooltip="How the characteristic is controlled (SPC, visual, automated check, etc.)">
+                    <textarea {...register("control_method")} className={textareaClass} rows={2} placeholder="e.g. X-bar R chart, 100% automated inspection" />
                   </FormField>
-                  <FormField label="Reaction Plan">
-                    <textarea {...register("reaction_plan")} className={textareaClass} rows={2} />
+                  <FormField label="Reaction Plan" tooltip="Steps to take when a measurement is out of specification">
+                    <textarea {...register("reaction_plan")} className={textareaClass} rows={2} placeholder="e.g. Stop line, quarantine lot, notify quality engineer" />
                   </FormField>
                 </Section>
 
                 <Section title="Responsibility & Notes">
-                  <FormField label="Responsible">
-                    <input {...register("responsible")} className={inputClass} />
+                  <FormField label="Responsible" tooltip="Person or team responsible for this control plan step">
+                    <input {...register("responsible")} className={inputClass} placeholder="e.g. Quality Inspector" />
                   </FormField>
-                  <FormField label="Notes">
-                    <textarea {...register("notes")} className={textareaClass} rows={3} />
+                  <FormField label="Notes" tooltip="Additional comments or references">
+                    <textarea {...register("notes")} className={textareaClass} rows={3} placeholder="Any additional notes..." />
                   </FormField>
                 </Section>
               </>
@@ -296,96 +410,95 @@ export default function FmeaDialog({
               /* ── DFMEA / PFMEA / SFMEA Form ────────────── */
               <>
                 <Section title="Identification">
-                  <FormField label="Step ID" required>
+                  <FormField label="Step ID" required tooltip={`Unique identifier. Use ${isDfmea ? "D-001" : isSfmea ? "S-001" : "P-001"} format for traceability linking.`} error={errors.step_id ? "Step ID is required" : undefined}>
                     <input
                       {...register("step_id", { required: true })}
-                      className={inputClass}
+                      className={`${inputClass} ${errors.step_id ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
                       placeholder={
                         isDfmea ? "D-001" : isSfmea ? "S-001" : "P-001"
                       }
                     />
-                    {errors.step_id && (
-                      <span className="mt-1 text-xs text-red-500">Step ID is required</span>
-                    )}
                   </FormField>
 
                   {/* Type-specific primary fields */}
                   {isDfmea && (
                     <>
-                      <FormField label="Part Name">
-                        <input {...register("part_name")} className={inputClass} />
+                      <FormField label="Part Name" tooltip="Name of the part or component being analyzed">
+                        <input {...register("part_name")} className={inputClass} placeholder="e.g. ABS ECU" />
                       </FormField>
-                      <FormField label="Function">
-                        <input {...register("function")} className={inputClass} />
+                      <FormField label="Function" tooltip="Primary function of the part in the design">
+                        <input {...register("function")} className={inputClass} placeholder="e.g. Controls ABS braking" />
                       </FormField>
                     </>
                   )}
                   {fmeaType === "pfmea" && (
                     <>
-                      <FormField label="Process Step">
-                        <input {...register("process_step")} className={inputClass} />
+                      <FormField label="Process Step" tooltip="Manufacturing or assembly process step being analyzed">
+                        <input {...register("process_step")} className={inputClass} placeholder="e.g. PCB Soldering" />
                       </FormField>
-                      <FormField label="Process Function">
-                        <input {...register("process_function")} className={inputClass} />
+                      <FormField label="Process Function" tooltip="What this process step is intended to accomplish">
+                        <input {...register("process_function")} className={inputClass} placeholder="e.g. Solder components to PCB" />
                       </FormField>
                     </>
                   )}
                   {isSfmea && (
                     <>
-                      <FormField label="System Element">
-                        <input {...register("system_element")} className={inputClass} />
+                      <FormField label="System Element" tooltip="System or subsystem being analyzed at the system level">
+                        <input {...register("system_element")} className={inputClass} placeholder="e.g. Braking System" />
                       </FormField>
-                      <FormField label="System Function">
-                        <input {...register("system_function")} className={inputClass} />
+                      <FormField label="System Function" tooltip="Primary function of the system element">
+                        <input {...register("system_function")} className={inputClass} placeholder="e.g. Provide vehicle deceleration" />
                       </FormField>
-                      <FormField label="System Requirement">
-                        <input {...register("system_requirement")} className={inputClass} />
+                      <FormField label="System Requirement" tooltip="Performance requirement for the system function">
+                        <input {...register("system_requirement")} className={inputClass} placeholder="e.g. Stop within 40m at 100km/h" />
                       </FormField>
-                      <FormField label="Focus Element">
-                        <input {...register("focus_element")} className={inputClass} />
+                      <FormField label="Focus Element" tooltip="Specific element within the system being focused on">
+                        <input {...register("focus_element")} className={inputClass} placeholder="e.g. Electronic stability control" />
                       </FormField>
                     </>
                   )}
                 </Section>
 
                 <Section title="Failure Analysis">
-                  <FormField label="Failure Mode">
-                    <input {...register("failure_mode")} className={inputClass} />
+                  <FormField label="Failure Mode" tooltip="How the function could potentially fail">
+                    <input {...register("failure_mode")} className={inputClass} placeholder="e.g. No output signal" />
                   </FormField>
-                  <FormField label="Failure Effect">
-                    <textarea {...register("failure_effect")} className={textareaClass} rows={2} />
+                  <FormField label="Failure Effect" tooltip="What happens to the customer/system when this failure occurs">
+                    <textarea {...register("failure_effect")} className={textareaClass} rows={2} placeholder="e.g. Loss of braking assist, increased stopping distance" />
                   </FormField>
-                  <FormField label="Failure Cause">
-                    <textarea {...register("failure_cause")} className={textareaClass} rows={2} />
+                  <FormField label="Failure Cause" tooltip="Root cause or mechanism that leads to the failure mode">
+                    <textarea {...register("failure_cause")} className={textareaClass} rows={2} placeholder="e.g. Solder joint fatigue due to thermal cycling" />
                   </FormField>
                 </Section>
 
                 <Section title="Current Controls">
-                  <FormField label="Prevention Controls">
+                  <FormField label="Prevention Controls" tooltip="Controls currently in place to prevent the failure cause">
                     <textarea
                       {...register("current_prevention_controls")}
                       className={textareaClass}
                       rows={2}
+                      placeholder="e.g. Design review, DFSS methodology"
                     />
                   </FormField>
-                  <FormField label="Detection Controls">
+                  <FormField label="Detection Controls" tooltip="Controls to detect the failure before it reaches the customer">
                     <textarea
                       {...register("current_detection_controls")}
                       className={textareaClass}
                       rows={2}
+                      placeholder="e.g. End-of-line functional test, visual inspection"
                     />
                   </FormField>
                 </Section>
 
                 <Section title="Risk Assessment">
                   <div className="grid grid-cols-3 gap-3">
-                    <FormField label="Severity (S)">
+                    <FormField label="Severity (S)" tooltip="Rate the severity of the failure effect on the customer (1=No effect, 10=Hazardous)">
                       {ratingSelect("severity", SEVERITY_SCALE)}
                     </FormField>
-                    <FormField label="Occurrence (O)">
+                    <FormField label="Occurrence (O)" tooltip="Rate the likelihood of the failure cause occurring (1=Remote, 10=Very high)">
                       {ratingSelect("occurrence", OCCURRENCE_SCALE)}
                     </FormField>
-                    <FormField label="Detection (D)">
+                    <FormField label="Detection (D)" tooltip="Rate the ability of current controls to detect the failure (1=Almost certain, 10=Cannot detect)">
                       {ratingSelect("detection", DETECTION_SCALE)}
                     </FormField>
                   </div>
@@ -417,7 +530,7 @@ export default function FmeaDialog({
 
                   {/* ASIL for DFMEA and SFMEA */}
                   {(isDfmea || isSfmea) && (
-                    <FormField label="ASIL Rating">
+                    <FormField label="ASIL Rating" tooltip="Automotive Safety Integrity Level per ISO 26262 (QM, A, B, C, D)">
                       <select {...register("asil_rating")} className={selectClass}>
                         {ASIL_OPTIONS.map((a) => (
                           <option key={a} value={a}>
@@ -429,17 +542,17 @@ export default function FmeaDialog({
                   )}
                 </Section>
 
-                {/* SFMEA Safety Section */}
-                {isSfmea && (
+                {/* SFMEA / DFMEA Safety Section */}
+                {(isSfmea || isDfmea) && (
                   <Section title="Safety (ISO 26262)">
-                    <FormField label="Safety Goal">
-                      <textarea {...register("safety_goal")} className={textareaClass} rows={2} />
+                    <FormField label="Safety Goal" tooltip="Top-level safety requirement to prevent or mitigate the hazardous event">
+                      <textarea {...register("safety_goal")} className={textareaClass} rows={2} placeholder="e.g. Prevent unintended acceleration" />
                     </FormField>
-                    <FormField label="Safety Mechanism">
-                      <textarea {...register("safety_mechanism")} className={textareaClass} rows={2} />
+                    <FormField label="Safety Mechanism" tooltip="Technical solution to achieve the safety goal (hardware/software)">
+                      <textarea {...register("safety_mechanism")} className={textareaClass} rows={2} placeholder="e.g. Redundant sensor monitoring with plausibility check" />
                     </FormField>
                     <div className="grid grid-cols-2 gap-3">
-                      <FormField label="FTTI">
+                      <FormField label="FTTI" tooltip="Fault Tolerant Time Interval — max time before a fault must be detected">
                         <select {...register("ftti")} className={selectClass}>
                           {FTTI_PRESETS.map((f) => (
                             <option key={f} value={f}>
@@ -448,7 +561,7 @@ export default function FmeaDialog({
                           ))}
                         </select>
                       </FormField>
-                      <FormField label="Diagnostic Coverage">
+                      <FormField label="Diagnostic Coverage" tooltip="Percentage of faults detectable by diagnostic tests (Low/Medium/High)">
                         <select {...register("diagnostic_coverage")} className={selectClass}>
                           {DIAGNOSTIC_COVERAGE_LEVELS.map((d) => (
                             <option key={d} value={d}>
@@ -458,25 +571,26 @@ export default function FmeaDialog({
                         </select>
                       </FormField>
                     </div>
-                    <FormField label="Safe State">
-                      <input {...register("safe_state")} className={inputClass} />
+                    <FormField label="Safe State" tooltip="System state achieved when the safety mechanism activates">
+                      <input {...register("safe_state")} className={inputClass} placeholder="e.g. Engine shutdown, limp-home mode" />
                     </FormField>
                   </Section>
                 )}
 
                 <Section title="Actions">
-                  <FormField label="Recommended Action">
+                  <FormField label="Recommended Action" tooltip="Specific action to reduce or eliminate the risk. Focus on reducing Severity, Occurrence, or Detection.">
                     <textarea
                       {...register("recommended_action")}
                       className={textareaClass}
                       rows={2}
+                      placeholder="e.g. Add redundant sensor, implement design verification test"
                     />
                   </FormField>
                   <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Responsibility">
-                      <input {...register("responsibility")} className={inputClass} />
+                    <FormField label="Responsibility" tooltip="Person or team responsible for completing the action">
+                      <input {...register("responsibility")} className={inputClass} placeholder="e.g. Design Engineer" />
                     </FormField>
-                    <FormField label="Target Date">
+                    <FormField label="Target Date" tooltip="Planned completion date for the recommended action">
                       <input
                         type="date"
                         {...register("target_date")}
@@ -484,7 +598,7 @@ export default function FmeaDialog({
                       />
                     </FormField>
                   </div>
-                  <FormField label="Action Status">
+                  <FormField label="Action Status" tooltip="Current status of the recommended action">
                     <select {...register("action_status")} className={selectClass}>
                       <option value="">-- Select --</option>
                       {ACTION_STATUSES.map((s) => (
@@ -497,17 +611,17 @@ export default function FmeaDialog({
                 </Section>
 
                 <Section title="Revised Assessment" defaultOpen={false}>
-                  <FormField label="Action Taken">
-                    <textarea {...register("action_taken")} className={textareaClass} rows={2} />
+                  <FormField label="Action Taken" tooltip="Describe the actual action taken and its effectiveness">
+                    <textarea {...register("action_taken")} className={textareaClass} rows={2} placeholder="e.g. Added redundant pressure sensor, validated in DVP&R" />
                   </FormField>
                   <div className="grid grid-cols-3 gap-3">
-                    <FormField label="New S">
+                    <FormField label="New S" tooltip="Revised Severity after action is implemented">
                       {ratingSelect("new_severity", SEVERITY_SCALE, true)}
                     </FormField>
-                    <FormField label="New O">
+                    <FormField label="New O" tooltip="Revised Occurrence after action is implemented">
                       {ratingSelect("new_occurrence", OCCURRENCE_SCALE, true)}
                     </FormField>
-                    <FormField label="New D">
+                    <FormField label="New D" tooltip="Revised Detection after action is implemented">
                       {ratingSelect("new_detection", DETECTION_SCALE, true)}
                     </FormField>
                   </div>
@@ -533,8 +647,8 @@ export default function FmeaDialog({
                 </Section>
 
                 <Section title="Notes" defaultOpen={false}>
-                  <FormField label="Notes">
-                    <textarea {...register("notes")} className={textareaClass} rows={3} />
+                  <FormField label="Notes" tooltip="Additional comments, references, or observations">
+                    <textarea {...register("notes")} className={textareaClass} rows={3} placeholder="Any additional notes or references..." />
                   </FormField>
                 </Section>
               </>

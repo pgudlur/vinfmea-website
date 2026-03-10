@@ -138,12 +138,99 @@ export function getDfmeaColumns(): ColumnDef<DfmeaEntry>[] {
       ),
       size: 100,
     },
+    {
+      id: "ctq",
+      header: "CTQ",
+      accessorFn: (row) => {
+        const product = (row.severity ?? 0) * (row.occurrence ?? 0);
+        if (product >= 36) return "CTQ";
+        if (product >= 16) return "Consider CTQ";
+        return "No CTQ";
+      },
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        const color =
+          val === "CTQ"
+            ? "bg-red-100 text-red-800"
+            : val === "Consider CTQ"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-green-100 text-green-800";
+        return (
+          <span
+            className={`inline-flex items-center justify-center px-2 h-6 rounded text-[10px] font-bold whitespace-nowrap ${color}`}
+          >
+            {val}
+          </span>
+        );
+      },
+      size: 100,
+    },
     textCell<DfmeaEntry>("recommended_action", "Recommended Action"),
     {
       accessorKey: "action_status",
       header: "Status",
       cell: ({ getValue }) => <StatusBadge value={getValue() as string} />,
       size: 110,
+    },
+    {
+      accessorKey: "new_severity",
+      header: "Rev S",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_occurrence",
+      header: "Rev O",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_detection",
+      header: "Rev D",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_rpn",
+      header: "Rev RPN",
+      cell: ({ getValue }) => {
+        const rpn = getValue() as number;
+        if (!rpn) return <span className="text-gray-400">--</span>;
+        const color =
+          rpn <= 50
+            ? "bg-green-100 text-green-800"
+            : rpn <= 100
+              ? "bg-yellow-100 text-yellow-800"
+              : rpn <= 200
+                ? "bg-orange-100 text-orange-800"
+                : "bg-red-100 text-red-800";
+        return (
+          <span
+            className={`inline-flex items-center justify-center w-10 h-6 rounded text-xs font-bold ${color}`}
+          >
+            {rpn}
+          </span>
+        );
+      },
+      size: 80,
+    },
+    {
+      accessorKey: "new_action_priority",
+      header: "Rev AP",
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        return val ? <ApBadge value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 70,
     },
     textCell<DfmeaEntry>("responsibility", "Responsibility", 140),
     {
@@ -158,6 +245,19 @@ export function getDfmeaColumns(): ColumnDef<DfmeaEntry>[] {
         );
       },
       size: 110,
+    },
+    {
+      accessorKey: "notes",
+      header: "Notes",
+      cell: ({ getValue }) => (
+        <span
+          className="block max-w-[200px] truncate text-xs text-gray-600"
+          title={String(getValue() ?? "")}
+        >
+          {String(getValue() ?? "") || "--"}
+        </span>
+      ),
+      size: 200,
     },
   ];
 }
@@ -233,13 +333,28 @@ export function getPfmeaColumns(): ColumnDef<PfmeaEntry>[] {
       header: "Init CTQ",
       cell: ({ getValue }) => {
         const val = getValue() as string;
+        if (!val || val === "No CTQ") {
+          return (
+            <span className="inline-flex items-center justify-center px-2 h-6 rounded text-[10px] font-bold whitespace-nowrap bg-green-100 text-green-800">
+              {val || "--"}
+            </span>
+          );
+        }
+        const color =
+          val === "CTQ"
+            ? "bg-red-100 text-red-800"
+            : val === "Consider CTQ"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-green-100 text-green-800";
         return (
-          <span className="text-xs font-medium text-gray-700">
-            {val || "--"}
+          <span
+            className={`inline-flex items-center justify-center px-2 h-6 rounded text-[10px] font-bold whitespace-nowrap ${color}`}
+          >
+            {val}
           </span>
         );
       },
-      size: 80,
+      size: 100,
     },
     {
       accessorKey: "criticality",
@@ -256,6 +371,97 @@ export function getPfmeaColumns(): ColumnDef<PfmeaEntry>[] {
       cell: ({ getValue }) => <StatusBadge value={getValue() as string} />,
       size: 110,
     },
+    {
+      accessorKey: "new_severity",
+      header: "Rev S",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_occurrence",
+      header: "Rev O",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_detection",
+      header: "Rev D",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_rpn",
+      header: "Rev RPN",
+      cell: ({ getValue }) => {
+        const rpn = getValue() as number;
+        if (!rpn) return <span className="text-gray-400">--</span>;
+        const color =
+          rpn <= 50
+            ? "bg-green-100 text-green-800"
+            : rpn <= 100
+              ? "bg-yellow-100 text-yellow-800"
+              : rpn <= 200
+                ? "bg-orange-100 text-orange-800"
+                : "bg-red-100 text-red-800";
+        return (
+          <span
+            className={`inline-flex items-center justify-center w-10 h-6 rounded text-xs font-bold ${color}`}
+          >
+            {rpn}
+          </span>
+        );
+      },
+      size: 80,
+    },
+    {
+      id: "rev_ctq",
+      header: "Rev CTQ",
+      accessorFn: (row) => {
+        const s = row.new_severity ?? 0;
+        const o = row.new_occurrence ?? 0;
+        if (!s || !o) return "";
+        const product = s * o;
+        if (product >= 36) return "CTQ";
+        if (product >= 16) return "Consider CTQ";
+        return "No CTQ";
+      },
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        if (!val) return <span className="text-gray-400">--</span>;
+        const color =
+          val === "CTQ"
+            ? "bg-red-100 text-red-800"
+            : val === "Consider CTQ"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-green-100 text-green-800";
+        return (
+          <span
+            className={`inline-flex items-center justify-center px-2 h-6 rounded text-[10px] font-bold whitespace-nowrap ${color}`}
+          >
+            {val}
+          </span>
+        );
+      },
+      size: 100,
+    },
+    {
+      accessorKey: "new_action_priority",
+      header: "Rev AP",
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        return val ? <ApBadge value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 70,
+    },
     textCell<PfmeaEntry>("responsibility", "Responsibility", 140),
     {
       accessorKey: "target_date",
@@ -269,6 +475,19 @@ export function getPfmeaColumns(): ColumnDef<PfmeaEntry>[] {
         );
       },
       size: 110,
+    },
+    {
+      accessorKey: "notes",
+      header: "Notes",
+      cell: ({ getValue }) => (
+        <span
+          className="block max-w-[200px] truncate text-xs text-gray-600"
+          title={String(getValue() ?? "")}
+        >
+          {String(getValue() ?? "") || "--"}
+        </span>
+      ),
+      size: 200,
     },
   ];
 }
@@ -378,6 +597,66 @@ export function getSfmeaColumns(): ColumnDef<SfmeaEntry>[] {
       cell: ({ getValue }) => <StatusBadge value={getValue() as string} />,
       size: 110,
     },
+    {
+      accessorKey: "new_severity",
+      header: "Rev S",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_occurrence",
+      header: "Rev O",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_detection",
+      header: "Rev D",
+      cell: ({ getValue }) => {
+        const val = getValue() as number;
+        return val ? <RatingCell value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "new_rpn",
+      header: "Rev RPN",
+      cell: ({ getValue }) => {
+        const rpn = getValue() as number;
+        if (!rpn) return <span className="text-gray-400">--</span>;
+        const color =
+          rpn <= 50
+            ? "bg-green-100 text-green-800"
+            : rpn <= 100
+              ? "bg-yellow-100 text-yellow-800"
+              : rpn <= 200
+                ? "bg-orange-100 text-orange-800"
+                : "bg-red-100 text-red-800";
+        return (
+          <span
+            className={`inline-flex items-center justify-center w-10 h-6 rounded text-xs font-bold ${color}`}
+          >
+            {rpn}
+          </span>
+        );
+      },
+      size: 80,
+    },
+    {
+      accessorKey: "new_action_priority",
+      header: "Rev AP",
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        return val ? <ApBadge value={val} /> : <span className="text-gray-400">--</span>;
+      },
+      size: 70,
+    },
     textCell<SfmeaEntry>("responsibility", "Responsibility", 140),
     {
       accessorKey: "target_date",
@@ -391,6 +670,19 @@ export function getSfmeaColumns(): ColumnDef<SfmeaEntry>[] {
         );
       },
       size: 110,
+    },
+    {
+      accessorKey: "notes",
+      header: "Notes",
+      cell: ({ getValue }) => (
+        <span
+          className="block max-w-[200px] truncate text-xs text-gray-600"
+          title={String(getValue() ?? "")}
+        >
+          {String(getValue() ?? "") || "--"}
+        </span>
+      ),
+      size: 200,
     },
   ];
 }

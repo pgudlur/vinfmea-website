@@ -252,6 +252,11 @@ export interface DfmeaCreate {
   current_detection_controls?: string;
   detection?: number;
   asil_rating?: string;
+  safety_goal?: string;
+  safety_mechanism?: string;
+  ftti?: string;
+  safe_state?: string;
+  diagnostic_coverage?: string;
   recommended_action?: string;
   responsibility?: string;
   target_date?: string;

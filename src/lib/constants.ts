@@ -62,11 +62,11 @@ export function getRiskCellColor(severity: number, occurrence: number): string {
 export const ASIL_OPTIONS = ["", "QM", "A", "B", "C", "D"];
 
 export const ASIL_COLORS: Record<string, { bg: string; text: string }> = {
-  QM: { bg: "bg-gray-100", text: "text-gray-600" },
-  A: { bg: "bg-blue-100", text: "text-blue-700" },
-  B: { bg: "bg-yellow-100", text: "text-yellow-700" },
-  C: { bg: "bg-orange-100", text: "text-orange-700" },
-  D: { bg: "bg-red-100", text: "text-red-700" },
+  QM: { bg: "bg-green-100", text: "text-green-700" },
+  A: { bg: "bg-yellow-100", text: "text-yellow-700" },
+  B: { bg: "bg-orange-100", text: "text-orange-700" },
+  C: { bg: "bg-red-100", text: "text-red-700" },
+  D: { bg: "bg-red-200", text: "text-red-900" },
 };
 
 // ── Action Statuses ─────────────────────────────────────────
@@ -105,7 +105,7 @@ export const SPECIAL_CHAR_CLASSES = [
 
 export const DIAGNOSTIC_COVERAGE_LEVELS = [
   "",
-  "High (≥99%)",
+  "High (>=99%)",
   "Medium (90-99%)",
   "Low (60-90%)",
   "None (<60%)",
@@ -122,6 +122,27 @@ export const FTTI_PRESETS = [
   "1s",
   "Custom",
 ];
+
+// ── Row-Level Criticality Background Colors (inline styles) ─
+
+export const CRITICALITY_ROW_COLORS: Record<string, string> = {
+  Critical: "#FADBD8",  // Light Red
+  High:     "#FDEBD0",  // Light Orange
+  Medium:   "#FEF9E7",  // Light Yellow
+  Low:      "#D5F5E3",  // Light Green
+};
+
+// ── Control Plan Special Char Class Row Colors ──────────────
+
+export const SPECIAL_CHAR_ROW_COLORS: Record<string, string> = {
+  CC: "#FADBD8",  // Critical Characteristic – Light Red
+  S:  "#FADBD8",  // Safety – Light Red
+  SC: "#FEF9E7",  // Significant – Light Yellow
+  R:  "#FEF9E7",  // Regulatory – Light Yellow
+  HI: "#FDEBD0",  // High Impact – Light Orange
+  F:  "#E8F4F8",  // Fit – Light Blue
+  A:  "#E8F4F8",  // Appearance – Light Blue
+};
 
 // ── FMEA Type Labels ────────────────────────────────────────
 
@@ -154,8 +175,8 @@ export const OCCURRENCE_SCALE = [
   { value: 2, label: "Remote" },
   { value: 3, label: "Very low" },
   { value: 4, label: "Low" },
-  { value: 5, label: "Moderate" },
-  { value: 6, label: "Medium" },
+  { value: 5, label: "Moderately low" },
+  { value: 6, label: "Moderate" },
   { value: 7, label: "Moderately high" },
   { value: 8, label: "High" },
   { value: 9, label: "Very high" },
