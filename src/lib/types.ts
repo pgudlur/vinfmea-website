@@ -561,3 +561,221 @@ export interface PaginatedResponse<T> {
   offset: number;
   limit: number;
 }
+
+
+// ── DRBFM ──────────────────────────────────────────────────
+
+export interface DrbfmEntry {
+  id: number;
+  part_id?: number | null;
+  project_id?: number | null;
+  change_point: string;
+  change_type?: string | null;
+  reason_for_change?: string | null;
+  concern: string;
+  concern_level?: string | null;
+  countermeasure?: string | null;
+  responsibility?: string | null;
+  target_date?: string | null;
+  status?: string | null;
+  verification_result?: string | null;
+  version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface DrbfmCreate {
+  part_id?: number | null;
+  project_id?: number | null;
+  change_point: string;
+  change_type?: string;
+  reason_for_change?: string;
+  concern: string;
+  concern_level?: string;
+  countermeasure?: string;
+  responsibility?: string;
+  target_date?: string;
+  status?: string;
+  verification_result?: string;
+}
+
+export interface DrbfmUpdate {
+  change_point?: string;
+  change_type?: string;
+  reason_for_change?: string;
+  concern?: string;
+  concern_level?: string;
+  countermeasure?: string;
+  responsibility?: string;
+  target_date?: string;
+  status?: string;
+  verification_result?: string;
+  version?: number;
+}
+
+// ── DVP&R ──────────────────────────────────────────────────
+
+export interface DvprEntry {
+  id: number;
+  part_id?: number | null;
+  project_id?: number | null;
+  test_number?: string | null;
+  test_description: string;
+  test_type?: string | null;
+  test_method?: string | null;
+  acceptance_criteria?: string | null;
+  sample_size?: string | null;
+  test_environment?: string | null;
+  responsibility?: string | null;
+  target_date?: string | null;
+  status?: string | null;
+  test_results?: string | null;
+  dfmea_reference?: string | null;
+  version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface DvprCreate {
+  part_id?: number | null;
+  project_id?: number | null;
+  test_number?: string;
+  test_description: string;
+  test_type?: string;
+  test_method?: string;
+  acceptance_criteria?: string;
+  sample_size?: string;
+  test_environment?: string;
+  responsibility?: string;
+  target_date?: string;
+  status?: string;
+  test_results?: string;
+  dfmea_reference?: string;
+}
+
+export interface DvprUpdate {
+  test_number?: string;
+  test_description?: string;
+  test_type?: string;
+  test_method?: string;
+  acceptance_criteria?: string;
+  sample_size?: string;
+  test_environment?: string;
+  responsibility?: string;
+  target_date?: string;
+  status?: string;
+  test_results?: string;
+  dfmea_reference?: string;
+  version?: number;
+}
+
+// ── FMEA-MSR ───────────────────────────────────────────────
+
+export interface FmeaMsrEntry {
+  id: number;
+  part_id?: number | null;
+  project_id?: number | null;
+  dfmea_step_id?: string | null;
+  failure_mode: string;
+  monitoring_measure?: string | null;
+  monitoring_type?: string | null;
+  diagnostic_coverage?: string | null;
+  system_response?: string | null;
+  response_type?: string | null;
+  fault_reaction_time?: string | null;
+  driver_warning?: string | null;
+  responsibility?: string | null;
+  status?: string | null;
+  notes?: string | null;
+  version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface FmeaMsrCreate {
+  part_id?: number | null;
+  project_id?: number | null;
+  dfmea_step_id?: string;
+  failure_mode: string;
+  monitoring_measure?: string;
+  monitoring_type?: string;
+  diagnostic_coverage?: string;
+  system_response?: string;
+  response_type?: string;
+  fault_reaction_time?: string;
+  driver_warning?: string;
+  responsibility?: string;
+  status?: string;
+  notes?: string;
+}
+
+export interface FmeaMsrUpdate {
+  dfmea_step_id?: string;
+  failure_mode?: string;
+  monitoring_measure?: string;
+  monitoring_type?: string;
+  diagnostic_coverage?: string;
+  system_response?: string;
+  response_type?: string;
+  fault_reaction_time?: string;
+  driver_warning?: string;
+  responsibility?: string;
+  status?: string;
+  notes?: string;
+  version?: number;
+}
+
+// ── Notifications ──────────────────────────────────────────
+
+export interface NotificationEntry {
+  id: number;
+  user_id: number;
+  notification_type: string;
+  title: string;
+  message?: string | null;
+  severity: string;
+  related_table?: string | null;
+  related_record_id?: number | null;
+  related_project_id?: number | null;
+  is_read: boolean;
+  is_dismissed: boolean;
+  created_at: string;
+  read_at?: string | null;
+}
+
+export interface NotificationSummary {
+  total: number;
+  unread: number;
+  critical: number;
+  warnings: number;
+}
+
+// ── Approval Workflows ─────────────────────────────────────
+
+export interface ApprovalStep {
+  id: number;
+  workflow_id: number;
+  step_order: number;
+  role_required: string;
+  assigned_user_id?: number | null;
+  assigned_user_name?: string | null;
+  status: string;
+  decision?: string | null;
+  comments?: string | null;
+  decided_at?: string | null;
+  signature_hash?: string | null;
+}
+
+export interface ApprovalWorkflow {
+  id: number;
+  project_id: number;
+  fmea_type: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  initiated_by?: number | null;
+  initiated_at?: string | null;
+  completed_at?: string | null;
+  version: number;
+  steps: ApprovalStep[];
+}

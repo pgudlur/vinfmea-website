@@ -7,6 +7,7 @@ import Sidebar from "@/components/app/Sidebar";
 import Header from "@/components/app/Header";
 import Toast from "@/components/ui/Toast";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import OnboardingWizard from "@/components/app/OnboardingWizard";
 
 // ── App Layout (protected) ──────────────────────────────────
 
@@ -17,6 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isInitialized = useAuth((s) => s.isInitialized);
   const initializedRef = useRef(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ── Auth guard & initialization ───────────────────────────
   useEffect(() => {
@@ -33,6 +35,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     initialize();
     setAuthChecked(true);
+
+    // Show onboarding wizard for first-time users
+    if (!localStorage.getItem("vinfmea_onboarding_complete")) {
+      setShowOnboarding(true);
+    }
   }, [initialize, router]);
 
   // ── Heartbeat lifecycle ───────────────────────────────────
@@ -83,6 +90,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <Toast />
+      {showOnboarding && (
+        <OnboardingWizard onDismiss={() => setShowOnboarding(false)} />
+      )}
     </div>
   );
 }

@@ -46,6 +46,19 @@ import type {
   CheckoutSessionRequest,
   CheckoutSessionResponse,
   PaginatedResponse,
+  DrbfmEntry,
+  DrbfmCreate,
+  DrbfmUpdate,
+  DvprEntry,
+  DvprCreate,
+  DvprUpdate,
+  FmeaMsrEntry,
+  FmeaMsrCreate,
+  FmeaMsrUpdate,
+  NotificationEntry,
+  NotificationSummary,
+  ApprovalWorkflow,
+  ApprovalStep,
 } from "./types";
 
 const API_URL =
@@ -632,4 +645,137 @@ export const stripeApi = {
       subscription: unknown;
       license: SaasLicense | null;
     }>("/api/stripe/subscription-status"),
+};
+
+// ── Tools: DRBFM ──────────────────────────────────────────
+
+export const toolsDrbfm = {
+  list: (params?: { part_id?: number; project_id?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.part_id) sp.set("part_id", String(params.part_id));
+    if (params?.project_id) sp.set("project_id", String(params.project_id));
+    const qs = sp.toString();
+    return request<DrbfmEntry[]>(`/api/tools/drbfm${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: number) => request<DrbfmEntry>(`/api/tools/drbfm/${id}`),
+  create: (data: DrbfmCreate) =>
+    request<DrbfmEntry>("/api/tools/drbfm", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: DrbfmUpdate) =>
+    request<DrbfmEntry>(`/api/tools/drbfm/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    request<{ message: string }>(`/api/tools/drbfm/${id}`, { method: "DELETE" }),
+};
+
+// ── Tools: DVP&R ──────────────────────────────────────────
+
+export const toolsDvpr = {
+  list: (params?: { part_id?: number; project_id?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.part_id) sp.set("part_id", String(params.part_id));
+    if (params?.project_id) sp.set("project_id", String(params.project_id));
+    const qs = sp.toString();
+    return request<DvprEntry[]>(`/api/tools/dvpr${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: number) => request<DvprEntry>(`/api/tools/dvpr/${id}`),
+  create: (data: DvprCreate) =>
+    request<DvprEntry>("/api/tools/dvpr", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: DvprUpdate) =>
+    request<DvprEntry>(`/api/tools/dvpr/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    request<{ message: string }>(`/api/tools/dvpr/${id}`, { method: "DELETE" }),
+};
+
+// ── Tools: FMEA-MSR ───────────────────────────────────────
+
+export const toolsFmeaMsr = {
+  list: (params?: { part_id?: number; project_id?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.part_id) sp.set("part_id", String(params.part_id));
+    if (params?.project_id) sp.set("project_id", String(params.project_id));
+    const qs = sp.toString();
+    return request<FmeaMsrEntry[]>(`/api/tools/fmea-msr${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: number) => request<FmeaMsrEntry>(`/api/tools/fmea-msr/${id}`),
+  create: (data: FmeaMsrCreate) =>
+    request<FmeaMsrEntry>("/api/tools/fmea-msr", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: FmeaMsrUpdate) =>
+    request<FmeaMsrEntry>(`/api/tools/fmea-msr/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    request<{ message: string }>(`/api/tools/fmea-msr/${id}`, { method: "DELETE" }),
+};
+
+// ── Notifications ─────────────────────────────────────────
+
+export const notifications = {
+  list: (params?: { unread_only?: boolean; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.unread_only) sp.set("unread_only", "true");
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const qs = sp.toString();
+    return request<NotificationEntry[]>(`/api/notifications${qs ? `?${qs}` : ""}`);
+  },
+  summary: () => request<NotificationSummary>("/api/notifications/summary"),
+  markRead: (id: number) =>
+    request<{ message: string }>(`/api/notifications/${id}/read`, { method: "POST" }),
+  markAllRead: () =>
+    request<{ message: string }>("/api/notifications/read-all", { method: "POST" }),
+  dismiss: (id: number) =>
+    request<{ message: string }>(`/api/notifications/${id}/dismiss`, { method: "POST" }),
+  generateOverdue: () =>
+    request<{ message: string }>("/api/notifications/generate-overdue", { method: "POST" }),
+  generateHighRisk: (threshold?: number) => {
+    const qs = threshold ? `?rpn_threshold=${threshold}` : "";
+    return request<{ message: string }>(`/api/notifications/generate-high-risk${qs}`, { method: "POST" });
+  },
+};
+
+// ── Approvals ─────────────────────────────────────────────
+
+export const approvals = {
+  list: (params?: { project_id?: number; status?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.project_id) sp.set("project_id", String(params.project_id));
+    if (params?.status) sp.set("status", params.status);
+    const qs = sp.toString();
+    return request<ApprovalWorkflow[]>(`/api/approvals${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: number) => request<ApprovalWorkflow>(`/api/approvals/${id}`),
+  create: (data: { project_id: number; fmea_type: string; title: string; description?: string; steps: { role_required: string; assigned_user_id?: number; assigned_user_name?: string }[] }) =>
+    request<ApprovalWorkflow>("/api/approvals", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  submit: (id: number) =>
+    request<{ message: string; status: string }>(`/api/approvals/${id}/submit`, { method: "POST" }),
+  decide: (workflowId: number, stepId: number, data: { decision: string; comments?: string }) =>
+    request<ApprovalStep>(`/api/approvals/${workflowId}/steps/${stepId}/decide`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  reopen: (id: number) =>
+    request<{ message: string }>(`/api/approvals/${id}/reopen`, { method: "POST" }),
+  delete: (id: number) =>
+    request<{ message: string }>(`/api/approvals/${id}`, { method: "DELETE" }),
+  stats: (projectId?: number) => {
+    const qs = projectId ? `?project_id=${projectId}` : "";
+    return request<{ total: number; pending: number; approved: number; rejected: number; my_pending_decisions: number }>(`/api/approvals/stats/summary${qs}`);
+  },
 };

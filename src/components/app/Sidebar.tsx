@@ -29,6 +29,7 @@ import {
   Database,
   ShieldCheck,
   Users,
+  Upload,
 } from "lucide-react";
 import { useAuth } from "@/stores/useAuth";
 import { useProjects } from "@/stores/useProjects";
@@ -199,6 +200,11 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Report Builder",
         href: "/app/report-builder",
         icon: <ClipboardCheck size={20} />,
+      },
+      {
+        label: "Data Import",
+        href: "/app/import",
+        icon: <Upload size={20} />,
       },
       {
         label: "Sample Data",

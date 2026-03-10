@@ -58,6 +58,7 @@ const PAGE_TITLES: Record<string, PageMeta> = {
   "/app/knowledge-library": { title: "Knowledge Library" },
   "/app/report-builder": { title: "Report Builder" },
   "/app/function-analysis": { title: "Function Analysis" },
+  "/app/import": { title: "Data Import" },
   "/app/seed-data": { title: "Sample Data" },
   "/app/validation": { title: "Validation Docs" },
   "/app/help": { title: "Help" },
