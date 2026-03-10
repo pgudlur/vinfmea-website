@@ -254,7 +254,7 @@ export default function Sidebar() {
   } = useUI();
 
   const isActive = (href: string) => {
-    if (href === "/app") return pathname === "/app";
+    if (href === "/app" || href === "/app/admin") return pathname === href;
     return pathname.startsWith(href);
   };
 

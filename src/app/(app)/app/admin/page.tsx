@@ -34,15 +34,15 @@ export default function AdminDashboardPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<SaasLicense | null>(null);
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(licenseSearch);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch on mount
+  // Fetch summary on mount
   useEffect(() => {
     fetchSummary();
-    fetchLicenses();
-  }, [fetchSummary, fetchLicenses]);
+  }, [fetchSummary]);
 
-  // Re-fetch when filters change
+  // Fetch licenses when filters change (also runs on mount)
   useEffect(() => {
     fetchLicenses();
   }, [licenseSearch, licensePlanFilter, licenseStatusFilter, licensePage, fetchLicenses]);
@@ -66,33 +66,58 @@ export default function AdminDashboardPage() {
   };
 
   const handleSaveLicense = async (data: SaasLicenseCreate | SaasLicenseUpdate) => {
-    if (editingLicense) {
-      await adminLicenses.update(editingLicense.id, data as SaasLicenseUpdate);
-    } else {
-      await adminLicenses.create(data as SaasLicenseCreate);
+    try {
+      setError(null);
+      if (editingLicense) {
+        await adminLicenses.update(editingLicense.id, data as SaasLicenseUpdate);
+      } else {
+        await adminLicenses.create(data as SaasLicenseCreate);
+      }
+      setDialogOpen(false);
+      fetchSummary();
+      fetchLicenses();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save license";
+      setError(msg);
+      throw err; // Re-throw so dialog knows it failed
     }
-    setDialogOpen(false);
-    fetchSummary();
-    fetchLicenses();
   };
 
   const handleDisable = async (lic: SaasLicense) => {
     if (!confirm(`Disable license ${lic.license_key}?`)) return;
-    await adminLicenses.disable(lic.id);
-    fetchSummary();
-    fetchLicenses();
+    try {
+      setError(null);
+      await adminLicenses.disable(lic.id);
+      fetchSummary();
+      fetchLicenses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to disable license");
+    }
   };
 
   const handleEnable = async (lic: SaasLicense) => {
-    await adminLicenses.enable(lic.id);
-    fetchSummary();
-    fetchLicenses();
+    try {
+      setError(null);
+      await adminLicenses.enable(lic.id);
+      fetchSummary();
+      fetchLicenses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to enable license");
+    }
   };
 
   const totalPages = Math.ceil(licensesTotal / 50);
 
   return (
     <div className="space-y-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4">&times;</button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <SummaryCard

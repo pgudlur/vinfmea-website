@@ -23,14 +23,13 @@ export default function UserManagementPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithSession | null>(null);
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(userSearch);
   const [resetUserId, setResetUserId] = useState<number | null>(null);
+  const [resetUsername, setResetUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
+  // Fetch users when filters change (also runs on mount)
   useEffect(() => {
     fetchUsers();
   }, [userSearch, userRoleFilter, userStatusFilter, userPage, fetchUsers]);
@@ -54,37 +53,68 @@ export default function UserManagementPage() {
   };
 
   const handleSaveUser = async (data: AdminUserCreate | AdminUserUpdate) => {
-    if (editingUser) {
-      await adminUsers.update(editingUser.id, data as AdminUserUpdate);
-    } else {
-      await adminUsers.create(data as AdminUserCreate);
+    try {
+      setError(null);
+      if (editingUser) {
+        await adminUsers.update(editingUser.id, data as AdminUserUpdate);
+      } else {
+        await adminUsers.create(data as AdminUserCreate);
+      }
+      setDialogOpen(false);
+      fetchUsers();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save user";
+      setError(msg);
+      throw err;
     }
-    setDialogOpen(false);
-    fetchUsers();
   };
 
   const handleDisable = async (u: UserWithSession) => {
     if (!confirm(`Disable user "${u.username}"? This will release their seat.`)) return;
-    await adminUsers.disable(u.id);
-    fetchUsers();
+    try {
+      setError(null);
+      await adminUsers.disable(u.id);
+      fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to disable user");
+    }
   };
 
   const handleEnable = async (u: UserWithSession) => {
-    await adminUsers.enable(u.id);
-    fetchUsers();
+    try {
+      setError(null);
+      await adminUsers.enable(u.id);
+      fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to enable user");
+    }
   };
 
   const handleResetPassword = async () => {
     if (!resetUserId || !newPassword) return;
-    await adminUsers.resetPassword(resetUserId, newPassword);
-    setResetUserId(null);
-    setNewPassword("");
+    try {
+      setError(null);
+      await adminUsers.resetPassword(resetUserId, newPassword);
+      setResetUserId(null);
+      setResetUsername("");
+      setNewPassword("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset password");
+    }
   };
 
   const totalPages = Math.ceil(usersTotal / 50);
 
   return (
     <div className="space-y-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4">&times;</button>
+        </div>
+      )}
+
       {/* Search + Filters + Actions */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-[200px] max-w-md">
@@ -222,7 +252,7 @@ export default function UserManagementPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => { setResetUserId(u.id); setNewPassword(""); }}
+                          onClick={() => { setResetUserId(u.id); setResetUsername(u.username); setNewPassword(""); }}
                           className="p-1.5 text-gray-400 hover:text-amber-600 rounded hover:bg-amber-50"
                           title="Reset Password"
                         >
@@ -301,7 +331,7 @@ export default function UserManagementPage() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Reset Password</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Enter a new password for user ID #{resetUserId}.
+              Enter a new password for user &quot;{resetUsername}&quot;.
             </p>
             <input
               type="password"

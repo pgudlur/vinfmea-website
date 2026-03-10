@@ -534,8 +534,8 @@ export const adminLicenses = {
     if (params?.search) sp.set("search", params.search);
     if (params?.plan) sp.set("plan", params.plan);
     if (params?.status) sp.set("status", params.status);
-    if (params?.offset) sp.set("offset", String(params.offset));
-    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    if (params?.limit != null) sp.set("limit", String(params.limit));
     const qs = sp.toString();
     return request<PaginatedResponse<SaasLicense>>(
       `/api/admin/licenses${qs ? `?${qs}` : ""}`
@@ -579,8 +579,8 @@ export const adminUsers = {
     if (params?.search) sp.set("search", params.search);
     if (params?.role) sp.set("role", params.role);
     if (params?.status) sp.set("status", params.status);
-    if (params?.offset) sp.set("offset", String(params.offset));
-    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    if (params?.limit != null) sp.set("limit", String(params.limit));
     const qs = sp.toString();
     return request<PaginatedResponse<UserWithSession>>(
       `/api/admin/users${qs ? `?${qs}` : ""}`
