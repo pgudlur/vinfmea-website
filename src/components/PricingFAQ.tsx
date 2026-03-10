@@ -16,8 +16,16 @@ const faqs = [
     a: "vinFMEA Pro is fully compliant with the AIAG & VDA FMEA Handbook (1st Edition, 2019), ISO 26262 Functional Safety, IATF 16949, and APQP requirements. It includes all 7 steps of the AIAG-VDA methodology.",
   },
   {
+    q: "Can I use my license on both desktop and web?",
+    a: "Yes! Every vinFMEA Pro subscription includes access to both the desktop application and the web interface with a single license. An engineer can create an FMEA on the desktop app at their workstation and a manager can review it from a browser — same data, same project, same login. No separate purchase required.",
+  },
+  {
+    q: "Is there a monthly billing option?",
+    a: "Yes, the Professional plan is available at $199/month billed monthly, or $1,999/year billed annually (saving 17%). Team and Enterprise plans are billed annually. You can switch between billing intervals at any time from your account settings.",
+  },
+  {
     q: "Does it work offline?",
-    a: "Yes. The Professional plan works entirely offline using a local SQLite database. Team and Enterprise plans can work both online (with the license server) and offline. Your data is always accessible.",
+    a: "Yes. The desktop application can work offline using a local SQLite database. However, offline data stays on your local machine and does not sync to the web version or other team members. For synchronized access across desktop and web, sign in to your server.",
   },
   {
     q: "What FMEA types are supported?",
