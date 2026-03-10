@@ -23,6 +23,7 @@ export interface UserInfo {
   id: number;
   username: string;
   display_name: string;
+  email?: string | null;
   role: string;
   is_active: boolean;
   created_at: string;
@@ -370,15 +371,28 @@ export interface TopRisk {
 }
 
 export interface ProjectStats {
-  dfmea_count: number;
-  pfmea_count: number;
-  sfmea_count: number;
-  control_plan_count: number;
-  avg_rpn: number;
-  max_rpn: number;
-  criticality_distribution: Record<string, number>;
-  ap_distribution: Record<string, number>;
-  action_status_distribution: Record<string, number>;
+  total_projects: number;
+  total_assemblies: number;
+  total_parts: number;
+  total_sfmea: number;
+  total_dfmea: number;
+  total_pfmea: number;
+  total_control_plan: number;
+  sfmea_by_criticality: Record<string, number>;
+  dfmea_by_criticality: Record<string, number>;
+  pfmea_by_criticality: Record<string, number>;
+  sfmea_by_ap: Record<string, number>;
+  dfmea_by_ap: Record<string, number>;
+  pfmea_by_ap: Record<string, number>;
+  sfmea_by_status: Record<string, number>;
+  dfmea_by_status: Record<string, number>;
+  pfmea_by_status: Record<string, number>;
+  avg_rpn_sfmea: number;
+  avg_rpn_dfmea: number;
+  avg_rpn_pfmea: number;
+  max_rpn_sfmea: number;
+  max_rpn_dfmea: number;
+  max_rpn_pfmea: number;
 }
 
 export interface FailureCause {
@@ -430,3 +444,115 @@ export interface AuditEntry {
 
 export type FmeaType = "sfmea" | "dfmea" | "pfmea" | "control-plan";
 export type FmeaEntry = SfmeaEntry | DfmeaEntry | PfmeaEntry | ControlPlanEntry;
+
+// ── Admin / SaaS License ───────────────────────────────────
+
+export interface AdminDashboardSummary {
+  total_licenses: number;
+  active_licenses: number;
+  trial_licenses: number;
+  expiring_30d: number;
+  disabled_licenses: number;
+}
+
+export interface SaasLicense {
+  id: number;
+  license_key: string;
+  subscription_id: number | null;
+  owner_user_id: number | null;
+  customer_name: string;
+  customer_email: string;
+  plan: string;
+  max_seats: number;
+  activated_seats: number;
+  status: string;
+  trial_ends_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface SaasLicenseCreate {
+  customer_name: string;
+  customer_email: string;
+  plan?: string;
+  max_seats?: number;
+  status?: string;
+  trial_ends_at?: string | null;
+  expires_at?: string | null;
+}
+
+export interface SaasLicenseUpdate {
+  customer_name?: string;
+  customer_email?: string;
+  plan?: string;
+  max_seats?: number;
+  activated_seats?: number;
+  status?: string;
+  trial_ends_at?: string | null;
+  expires_at?: string | null;
+}
+
+export interface SubscriptionInfo {
+  id: number;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  owner_user_id: number | null;
+  plan: string;
+  billing_interval: string;
+  status: string;
+  quantity: number;
+  trial_end: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface UserWithSession {
+  id: number;
+  username: string;
+  display_name: string;
+  email: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  has_active_seat: boolean;
+  last_heartbeat: string | null;
+  license_key: string | null;
+}
+
+export interface AdminUserCreate {
+  username: string;
+  password: string;
+  display_name: string;
+  email?: string;
+  role?: string;
+}
+
+export interface AdminUserUpdate {
+  display_name?: string;
+  email?: string;
+  role?: string;
+  is_active?: boolean;
+}
+
+export interface CheckoutSessionRequest {
+  plan: string;
+  quantity?: number;
+  customer_email?: string;
+  customer_name?: string;
+}
+
+export interface CheckoutSessionResponse {
+  checkout_url: string;
+  session_id: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  offset: number;
+  limit: number;
+}

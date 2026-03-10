@@ -36,10 +36,20 @@ import type {
   SyncSummary,
   TraceabilityChain,
   AuditEntry,
+  AdminDashboardSummary,
+  SaasLicense,
+  SaasLicenseCreate,
+  SaasLicenseUpdate,
+  UserWithSession,
+  AdminUserCreate,
+  AdminUserUpdate,
+  CheckoutSessionRequest,
+  CheckoutSessionResponse,
+  PaginatedResponse,
 } from "./types";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "https://vinfmea-api-production.up.railway.app";
 const TOKEN_KEY = "vinfmea_token";
 
 // ── Error class ─────────────────────────────────────────────
@@ -505,4 +515,121 @@ export const audit = {
       broken_at: number | null;
       message: string;
     }>("/api/audit/verify"),
+};
+
+// ── Admin Licenses ─────────────────────────────────────────
+
+export const adminLicenses = {
+  summary: () =>
+    request<AdminDashboardSummary>("/api/admin/dashboard-summary"),
+
+  list: (params?: {
+    search?: string;
+    plan?: string;
+    status?: string;
+    offset?: number;
+    limit?: number;
+  }) => {
+    const sp = new URLSearchParams();
+    if (params?.search) sp.set("search", params.search);
+    if (params?.plan) sp.set("plan", params.plan);
+    if (params?.status) sp.set("status", params.status);
+    if (params?.offset) sp.set("offset", String(params.offset));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const qs = sp.toString();
+    return request<PaginatedResponse<SaasLicense>>(
+      `/api/admin/licenses${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  create: (data: SaasLicenseCreate) =>
+    request<SaasLicense>("/api/admin/licenses", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: SaasLicenseUpdate) =>
+    request<SaasLicense>(`/api/admin/licenses/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  disable: (id: number) =>
+    request<SaasLicense>(`/api/admin/licenses/${id}/disable`, {
+      method: "POST",
+    }),
+
+  enable: (id: number) =>
+    request<SaasLicense>(`/api/admin/licenses/${id}/enable`, {
+      method: "POST",
+    }),
+};
+
+// ── Admin Users ────────────────────────────────────────────
+
+export const adminUsers = {
+  list: (params?: {
+    search?: string;
+    role?: string;
+    status?: string;
+    offset?: number;
+    limit?: number;
+  }) => {
+    const sp = new URLSearchParams();
+    if (params?.search) sp.set("search", params.search);
+    if (params?.role) sp.set("role", params.role);
+    if (params?.status) sp.set("status", params.status);
+    if (params?.offset) sp.set("offset", String(params.offset));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const qs = sp.toString();
+    return request<PaginatedResponse<UserWithSession>>(
+      `/api/admin/users${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  create: (data: AdminUserCreate) =>
+    request<UserInfo>("/api/admin/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: AdminUserUpdate) =>
+    request<UserInfo>(`/api/admin/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  disable: (id: number) =>
+    request<UserInfo>(`/api/admin/users/${id}/disable`, { method: "POST" }),
+
+  enable: (id: number) =>
+    request<UserInfo>(`/api/admin/users/${id}/enable`, { method: "POST" }),
+
+  resetPassword: (id: number, new_password: string) =>
+    request<UserInfo>(`/api/admin/users/${id}/reset-password`, {
+      method: "POST",
+      body: JSON.stringify({ new_password }),
+    }),
+};
+
+// ── Stripe ─────────────────────────────────────────────────
+
+export const stripeApi = {
+  createCheckoutSession: (data: CheckoutSessionRequest) =>
+    request<CheckoutSessionResponse>("/api/stripe/create-checkout-session", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  createPortalSession: () =>
+    request<{ portal_url: string }>("/api/stripe/create-portal-session", {
+      method: "POST",
+    }),
+
+  subscriptionStatus: () =>
+    request<{
+      has_subscription: boolean;
+      subscription: unknown;
+      license: SaasLicense | null;
+    }>("/api/stripe/subscription-status"),
 };

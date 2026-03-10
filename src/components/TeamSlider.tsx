@@ -1,27 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { stripeApi } from "@/lib/api";
 
-// Volume discount tiers
+// Volume discount tiers (base: $1,799/seat/yr)
 function getPricePerSeat(seats: number): number {
-  if (seats >= 50) return 949;
-  if (seats >= 25) return 999;
-  if (seats >= 15) return 1049;
-  if (seats >= 10) return 1099;
-  return 1199; // 2-9 seats
+  if (seats >= 25) return 1199;   // 33% off
+  if (seats >= 10) return 1399;   // 22% off
+  if (seats >= 5)  return 1599;   // 11% off
+  return 1799; // 2-4 seats (base price)
 }
 
 function getDiscount(seats: number): number {
-  const base = 1199;
+  const base = 1799;
   const actual = getPricePerSeat(seats);
   return Math.round(((base - actual) / base) * 100);
 }
 
-const presets = [3, 5, 7, 10, 15, 25];
+const presets = [2, 5, 10, 15, 25, 50];
 
 export function TeamSlider() {
   const [seats, setSeats] = useState(5);
   const [showModal, setShowModal] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const handlePurchase = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await stripeApi.createCheckoutSession({
+        plan: "team_annual",
+        quantity: seats,
+      });
+      window.location.href = res.checkout_url;
+    } catch {
+      window.location.href = "/#contact";
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const perSeat = getPricePerSeat(seats);
   const total = perSeat * seats;
@@ -158,8 +174,12 @@ export function TeamSlider() {
             </div>
 
             {/* Purchase button */}
-            <button className="w-full py-3.5 rounded-xl bg-[var(--blue-dark)] text-white font-bold hover:bg-[#1D4ED8] transition-colors shadow-md">
-              Purchase {seats} Seats &mdash; ${total.toLocaleString()}
+            <button
+              onClick={handlePurchase}
+              disabled={checkoutLoading}
+              className="w-full py-3.5 rounded-xl bg-[var(--blue-dark)] text-white font-bold hover:bg-[#1D4ED8] transition-colors shadow-md disabled:opacity-60"
+            >
+              {checkoutLoading ? "Redirecting..." : `Purchase ${seats} Seats \u2014 $${total.toLocaleString()}`}
             </button>
             <p className="text-xs text-gray-400 text-center mt-3">
               1-year license. Floating seats (shared pool). Secure payment via Stripe.

@@ -11,6 +11,24 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
+  Workflow,
+  Network,
+  HelpCircle,
+  GitBranch,
+  Shield,
+  History,
+  RefreshCw,
+  Link2,
+  BookOpen,
+  Layers,
+  FileSearch,
+  ClipboardCheck,
+  FlaskConical,
+  Activity,
+  Globe,
+  Database,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/stores/useAuth";
 import { useProjects } from "@/stores/useProjects";
@@ -52,6 +70,22 @@ function TypeBadge({ text, color }: { text: string; color: string }) {
 
 // ── Navigation configuration ────────────────────────────────
 
+const ADMIN_SECTION: NavSection = {
+  title: "ADMIN",
+  items: [
+    {
+      label: "License Dashboard",
+      href: "/app/admin",
+      icon: <ShieldCheck size={20} />,
+    },
+    {
+      label: "User Management",
+      href: "/app/admin/users",
+      icon: <Users size={20} />,
+    },
+  ],
+};
+
 const NAV_SECTIONS: NavSection[] = [
   {
     title: "MAIN",
@@ -65,6 +99,11 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Projects",
         href: "/app/projects",
         icon: <FolderOpen size={20} />,
+      },
+      {
+        label: "Hierarchy",
+        href: "/app/hierarchy",
+        icon: <GitBranch size={20} />,
       },
     ],
   },
@@ -91,6 +130,26 @@ const NAV_SECTIONS: NavSection[] = [
         href: "/app/control-plan",
         badge: { text: "CP", color: "#A855F7" },
       },
+      {
+        label: "FMEA-MSR",
+        href: "/app/fmea-msr",
+        badge: { text: "MSR", color: "#F97316" },
+      },
+      {
+        label: "DRBFM",
+        href: "/app/drbfm",
+        badge: { text: "DR", color: "#0EA5E9" },
+      },
+      {
+        label: "DVP&R",
+        href: "/app/dvpr",
+        badge: { text: "DV", color: "#14B8A6" },
+      },
+      {
+        label: "Function Analysis",
+        href: "/app/function-analysis",
+        icon: <FileSearch size={20} />,
+      },
     ],
   },
   {
@@ -102,9 +161,74 @@ const NAV_SECTIONS: NavSection[] = [
         icon: <Grid3X3 size={20} />,
       },
       {
-        label: "Actions",
+        label: "Process Flow",
+        href: "/app/process-flow",
+        icon: <Workflow size={20} />,
+      },
+      {
+        label: "Boundary Diagram",
+        href: "/app/boundary-diagram",
+        icon: <Network size={20} />,
+      },
+      {
+        label: "Action Tracking",
         href: "/app/actions",
         icon: <ListChecks size={20} />,
+      },
+      {
+        label: "Sync Status",
+        href: "/app/sync-status",
+        icon: <RefreshCw size={20} />,
+      },
+      {
+        label: "Rebuild Links",
+        href: "/app/rebuild-links",
+        icon: <Link2 size={20} />,
+      },
+      {
+        label: "Audit Trail",
+        href: "/app/audit-trail",
+        icon: <History size={20} />,
+      },
+      {
+        label: "Knowledge Library",
+        href: "/app/knowledge-library",
+        icon: <BookOpen size={20} />,
+      },
+      {
+        label: "Report Builder",
+        href: "/app/report-builder",
+        icon: <ClipboardCheck size={20} />,
+      },
+      {
+        label: "Sample Data",
+        href: "/app/seed-data",
+        icon: <Database size={20} />,
+      },
+    ],
+  },
+  {
+    title: "VALIDATION",
+    items: [
+      {
+        label: "Validation Docs",
+        href: "/app/validation",
+        icon: <Shield size={20} />,
+      },
+    ],
+  },
+  {
+    title: "SUPPORT",
+    items: [
+      {
+        label: "Help",
+        href: "/app/help",
+        icon: <HelpCircle size={20} />,
+      },
+      {
+        label: "Language",
+        href: "/app/language",
+        icon: <Globe size={20} />,
       },
     ],
   },
@@ -115,8 +239,13 @@ const NAV_SECTIONS: NavSection[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { currentProject } = useProjects();
+
+  // Build navigation sections: add ADMIN section for admin users
+  const navSections = user?.role === "admin"
+    ? [NAV_SECTIONS[0], ADMIN_SECTION, ...NAV_SECTIONS.slice(1)]
+    : NAV_SECTIONS;
   const {
     sidebarCollapsed,
     sidebarMobileOpen,
@@ -189,7 +318,7 @@ export default function Sidebar() {
 
       {/* ── Navigation sections ────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto sidebar-scroll py-3 px-2">
-        {NAV_SECTIONS.map((section) => (
+        {navSections.map((section) => (
           <div key={section.title} className="mb-4">
             {/* Section label */}
             {!sidebarCollapsed && (

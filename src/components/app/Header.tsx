@@ -35,6 +35,33 @@ const PAGE_TITLES: Record<string, PageMeta> = {
   },
   "/app/risk-matrix": { title: "Risk Matrix" },
   "/app/actions": { title: "Action Tracker" },
+  "/app/admin": { title: "Admin Dashboard" },
+  "/app/admin/users": { title: "User Management" },
+  "/app/hierarchy": { title: "Hierarchy" },
+  "/app/fmea-msr": {
+    title: "FMEA-MSR",
+    badge: { text: "MSR", color: "#F97316" },
+  },
+  "/app/drbfm": {
+    title: "DRBFM",
+    badge: { text: "DR", color: "#0EA5E9" },
+  },
+  "/app/dvpr": {
+    title: "DVP&R",
+    badge: { text: "DV", color: "#14B8A6" },
+  },
+  "/app/process-flow": { title: "Process Flow" },
+  "/app/boundary-diagram": { title: "Boundary Diagram" },
+  "/app/sync-status": { title: "Sync Status" },
+  "/app/rebuild-links": { title: "Rebuild Links" },
+  "/app/audit-trail": { title: "Audit Trail" },
+  "/app/knowledge-library": { title: "Knowledge Library" },
+  "/app/report-builder": { title: "Report Builder" },
+  "/app/function-analysis": { title: "Function Analysis" },
+  "/app/seed-data": { title: "Sample Data" },
+  "/app/validation": { title: "Validation Docs" },
+  "/app/help": { title: "Help" },
+  "/app/language": { title: "Language" },
 };
 
 // ── Role badge colors ───────────────────────────────────────

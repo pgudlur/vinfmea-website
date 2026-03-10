@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { stripeApi } from "@/lib/api";
 
 const plans = [
   {
     name: "Professional",
     subtitle: "For individual engineers",
-    price: "$1,499",
+    price: "$1,999",
     period: "/year",
-    monthly: "or $149/mo billed monthly",
+    monthly: "or $199/mo billed monthly",
     popular: false,
     cta: "Start Free Trial",
+    stripePlan: "professional_annual",
     features: [
       "SFMEA / DFMEA / PFMEA / Control Plan",
       "ISO 26262 functional safety",
@@ -24,12 +27,13 @@ const plans = [
   },
   {
     name: "Team",
-    subtitle: "5, 10, or any custom seat count",
-    price: "$1,199",
+    subtitle: "2\u201350 floating seats",
+    price: "$1,799",
     period: "/seat/year",
-    monthly: "Volume discounts available",
+    monthly: "Volume discounts up to 33% off",
     popular: true,
     cta: "Start Free Trial",
+    stripePlan: "team_annual",
     features: [
       "Everything in Professional",
       "Floating license server",
@@ -46,9 +50,10 @@ const plans = [
     subtitle: "Unlimited seats, dedicated support",
     price: "Custom",
     period: "",
-    monthly: "Annual agreement",
+    monthly: "Starting at $30,000/yr",
     popular: false,
     cta: "Contact Sales",
+    stripePlan: "",
     features: [
       "Everything in Team",
       "Unlimited concurrent sessions",
@@ -63,6 +68,25 @@ const plans = [
 ];
 
 export function PricingCards() {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (plan: typeof plans[0]) => {
+    if (!plan.stripePlan) return; // Enterprise → contact
+    setLoading(plan.name);
+    try {
+      const res = await stripeApi.createCheckoutSession({
+        plan: plan.stripePlan,
+        quantity: plan.name === "Team" ? 5 : 1,
+      });
+      window.location.href = res.checkout_url;
+    } catch {
+      // Fallback to contact form if Stripe isn't configured yet
+      window.location.href = "/#contact";
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4">
       <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
@@ -105,16 +129,26 @@ export function PricingCards() {
               ))}
             </ul>
 
-            <Link
-              href={plan.name === "Enterprise" ? "/#contact" : "/#contact"}
-              className={`block w-full text-center py-3 rounded-lg font-semibold transition-colors ${
-                plan.popular
-                  ? "bg-[var(--blue-dark)] text-white hover:bg-[#1D4ED8]"
-                  : "bg-gray-100 text-[var(--navy)] hover:bg-gray-200"
-              }`}
-            >
-              {plan.cta}
-            </Link>
+            {plan.stripePlan ? (
+              <button
+                onClick={() => handleCheckout(plan)}
+                disabled={loading === plan.name}
+                className={`block w-full text-center py-3 rounded-lg font-semibold transition-colors ${
+                  plan.popular
+                    ? "bg-[var(--blue-dark)] text-white hover:bg-[#1D4ED8]"
+                    : "bg-gray-100 text-[var(--navy)] hover:bg-gray-200"
+                } disabled:opacity-60`}
+              >
+                {loading === plan.name ? "Redirecting..." : plan.cta}
+              </button>
+            ) : (
+              <Link
+                href="/#contact"
+                className={`block w-full text-center py-3 rounded-lg font-semibold transition-colors bg-gray-100 text-[var(--navy)] hover:bg-gray-200`}
+              >
+                {plan.cta}
+              </Link>
+            )}
           </div>
         ))}
       </div>
