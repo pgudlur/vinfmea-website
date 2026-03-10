@@ -178,6 +178,7 @@ export default function AdminDashboardPage() {
         <select
           value={licensePlanFilter}
           onChange={(e) => setLicensePlanFilter(e.target.value)}
+          aria-label="Filter by plan"
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="">All Plans</option>
@@ -191,6 +192,7 @@ export default function AdminDashboardPage() {
         <select
           value={licenseStatusFilter}
           onChange={(e) => setLicenseStatusFilter(e.target.value)}
+          aria-label="Filter by status"
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="">All Status</option>

@@ -136,6 +136,7 @@ export default function UserManagementPage() {
         <select
           value={userRoleFilter}
           onChange={(e) => setUserRoleFilter(e.target.value)}
+          aria-label="Filter by role"
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="">All Roles</option>
@@ -147,6 +148,7 @@ export default function UserManagementPage() {
         <select
           value={userStatusFilter}
           onChange={(e) => setUserStatusFilter(e.target.value)}
+          aria-label="Filter by status"
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="">All Status</option>
@@ -365,6 +367,7 @@ export default function UserManagementPage() {
 /** Format a timestamp as relative time (e.g. "2m ago") */
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
+  if (isNaN(diff) || diff < 0) return "just now";
   const secs = Math.floor(diff / 1000);
   if (secs < 60) return `${secs}s ago`;
   const mins = Math.floor(secs / 60);

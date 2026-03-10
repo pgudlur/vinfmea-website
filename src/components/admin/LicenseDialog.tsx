@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { SaasLicense, SaasLicenseCreate, SaasLicenseUpdate } from "@/lib/types";
 
 interface Props {
@@ -35,6 +35,16 @@ export default function LicenseDialog({ license, onSave, onClose }: Props) {
   const [expiresAt, setExpiresAt] = useState(license?.expires_at?.slice(0, 10) ?? "");
   const [saving, setSaving] = useState(false);
 
+  // Close on Escape key
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [handleEscape]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -66,8 +76,8 @@ export default function LicenseDialog({ license, onSave, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-900">
             {isEdit ? "Edit License" : "New License"}

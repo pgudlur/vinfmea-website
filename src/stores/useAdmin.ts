@@ -31,10 +31,14 @@ interface AdminState {
   isLoadingLicenses: boolean;
   isLoadingUsers: boolean;
 
+  // Error state
+  error: string | null;
+
   // Actions
   fetchSummary: () => Promise<void>;
   fetchLicenses: () => Promise<void>;
   fetchUsers: () => Promise<void>;
+  clearError: () => void;
   setLicenseSearch: (v: string) => void;
   setLicensePlanFilter: (v: string) => void;
   setLicenseStatusFilter: (v: string) => void;
@@ -70,13 +74,17 @@ export const useAdmin = create<AdminState>((set, get) => ({
   isLoadingLicenses: false,
   isLoadingUsers: false,
 
+  // Error
+  error: null,
+
   fetchSummary: async () => {
     set({ isLoadingSummary: true });
     try {
       const data = await adminLicenses.summary();
       set({ summary: data });
-    } catch {
-      // ignore
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch summary";
+      set({ error: message });
     } finally {
       set({ isLoadingSummary: false });
     }
@@ -94,8 +102,9 @@ export const useAdmin = create<AdminState>((set, get) => ({
         limit: PAGE_SIZE,
       });
       set({ licenses: res.items, licensesTotal: res.total });
-    } catch {
-      // ignore
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch licenses";
+      set({ error: message });
     } finally {
       set({ isLoadingLicenses: false });
     }
@@ -113,12 +122,15 @@ export const useAdmin = create<AdminState>((set, get) => ({
         limit: PAGE_SIZE,
       });
       set({ users: res.items, usersTotal: res.total });
-    } catch {
-      // ignore
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch users";
+      set({ error: message });
     } finally {
       set({ isLoadingUsers: false });
     }
   },
+
+  clearError: () => set({ error: null }),
 
   setLicenseSearch: (v) => set({ licenseSearch: v, licensePage: 0 }),
   setLicensePlanFilter: (v) => set({ licensePlanFilter: v, licensePage: 0 }),

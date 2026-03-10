@@ -58,7 +58,14 @@ export default function CheckoutSuccessPage() {
           </Link>
         </div>
 
-        <p className="text-xs text-gray-400 mt-8">
+        <p className="text-sm text-gray-500 mt-8 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          If you did not complete a purchase, please{" "}
+          <Link href="/pricing" className="text-blue-600 hover:underline font-medium">
+            return to the pricing page
+          </Link>.
+        </p>
+
+        <p className="text-xs text-gray-400 mt-4">
           Need help? Contact us at{" "}
           <a href="mailto:support@vinfmea.com" className="text-blue-600 hover:underline">
             support@vinfmea.com

@@ -33,6 +33,7 @@ export function TeamSlider() {
       });
       window.location.href = res.checkout_url;
     } catch {
+      alert("Unable to start checkout. Please try again or contact support.");
       window.location.href = "/#contact";
     } finally {
       setCheckoutLoading(false);

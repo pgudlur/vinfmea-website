@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { AdminUserCreate, AdminUserUpdate, UserWithSession } from "@/lib/types";
 
 interface Props {
@@ -24,6 +24,16 @@ export default function UserDialog({ user, onSave, onClose }: Props) {
   const [role, setRole] = useState(user?.role ?? "editor");
   const [isActive, setIsActive] = useState(user?.is_active ?? true);
   const [saving, setSaving] = useState(false);
+
+  // Close on Escape key
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [handleEscape]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +63,8 @@ export default function UserDialog({ user, onSave, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-900">
             {isEdit ? "Edit User" : "New User"}
@@ -82,10 +92,12 @@ export default function UserDialog({ user, onSave, onClose }: Props) {
                 <input
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
+                <p className="text-xs text-gray-400 mt-1">Minimum 8 characters</p>
               </div>
             </>
           )}

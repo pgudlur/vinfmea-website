@@ -76,11 +76,11 @@ export function PricingCards() {
     try {
       const res = await stripeApi.createCheckoutSession({
         plan: plan.stripePlan,
-        quantity: plan.name === "Team" ? 5 : 1,
+        quantity: 1,
       });
       window.location.href = res.checkout_url;
     } catch {
-      // Fallback to contact form if Stripe isn't configured yet
+      alert("Unable to start checkout. Please try again or contact support.");
       window.location.href = "/#contact";
     } finally {
       setLoading(null);
@@ -129,7 +129,14 @@ export function PricingCards() {
               ))}
             </ul>
 
-            {plan.stripePlan ? (
+            {plan.name === "Team" ? (
+              <a
+                href="/pricing#team-pricing"
+                className={`block w-full text-center py-3 rounded-lg font-semibold transition-colors bg-[var(--blue-dark)] text-white hover:bg-[#1D4ED8]`}
+              >
+                {plan.cta}
+              </a>
+            ) : plan.stripePlan ? (
               <button
                 onClick={() => handleCheckout(plan)}
                 disabled={loading === plan.name}
