@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, Package } from "lucide-react";
+import { FolderOpen, Package, Layers } from "lucide-react";
 import KpiCard from "@/components/ui/KpiCard";
 
 interface CountCardsProps {
@@ -27,12 +27,18 @@ function FmeaIcon({ letter, bg }: { letter: string; bg: string }) {
 
 export default function CountCards({ counts }: CountCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
       <KpiCard
         label="Projects"
         value={counts.projects}
         icon={<FolderOpen size={22} />}
         color="border-slate-400"
+      />
+      <KpiCard
+        label="Assemblies"
+        value={counts.assemblies}
+        icon={<Layers size={22} />}
+        color="border-orange-400"
       />
       <KpiCard
         label="Parts"
