@@ -237,12 +237,12 @@ export default function LoginPage() {
 
           {/* Footer link */}
           <p className="mt-8 text-center text-sm text-gray-500">
-            Need access?{" "}
+            Don&apos;t have an account?{" "}
             <a
-              href="/pricing"
+              href="/register"
               className="font-medium text-[#2563EB] transition-colors hover:text-[#1D4ED8]"
             >
-              View pricing plans
+              Start Free Trial
             </a>
           </p>
         </div>

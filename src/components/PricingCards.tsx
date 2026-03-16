@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { stripeApi } from "@/lib/api";
 
 type BillingInterval = "monthly" | "annual";
 
@@ -71,26 +70,7 @@ const plans = [
 ];
 
 export function PricingCards() {
-  const [loading, setLoading] = useState<string | null>(null);
   const [billing, setBilling] = useState<BillingInterval>("annual");
-
-  const handleCheckout = async (plan: typeof plans[0]) => {
-    const tier = plan.pricing[billing];
-    if (!tier.stripePlan) return; // Enterprise → contact
-    setLoading(plan.name);
-    try {
-      const res = await stripeApi.createCheckoutSession({
-        plan: tier.stripePlan,
-        quantity: 1,
-      });
-      window.location.href = res.checkout_url;
-    } catch {
-      alert("Unable to start checkout. Please try again or contact support.");
-      window.location.href = "/#contact";
-    } finally {
-      setLoading(null);
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4">
@@ -164,29 +144,21 @@ export function PricingCards() {
                 ))}
               </ul>
 
-              {plan.name === "Team" ? (
-                <a
-                  href="/pricing#team-pricing"
-                  className="block w-full text-center py-3 rounded-lg font-semibold transition-colors bg-[var(--blue-dark)] text-white hover:bg-[#1D4ED8]"
+              {plan.cta === "Contact Sales" ? (
+                <Link
+                  href="/#contact"
+                  className="block w-full text-center py-3 rounded-lg font-semibold transition-colors bg-gray-100 text-[var(--navy)] hover:bg-gray-200"
                 >
                   {plan.cta}
-                </a>
-              ) : tier.stripePlan ? (
-                <button
-                  onClick={() => handleCheckout(plan)}
-                  disabled={loading === plan.name}
+                </Link>
+              ) : (
+                <Link
+                  href="/register"
                   className={`block w-full text-center py-3 rounded-lg font-semibold transition-colors ${
                     plan.popular
                       ? "bg-[var(--blue-dark)] text-white hover:bg-[#1D4ED8]"
                       : "bg-gray-100 text-[var(--navy)] hover:bg-gray-200"
-                  } disabled:opacity-60`}
-                >
-                  {loading === plan.name ? "Redirecting..." : plan.cta}
-                </button>
-              ) : (
-                <Link
-                  href="/#contact"
-                  className="block w-full text-center py-3 rounded-lg font-semibold transition-colors bg-gray-100 text-[var(--navy)] hover:bg-gray-200"
+                  }`}
                 >
                   {plan.cta}
                 </Link>

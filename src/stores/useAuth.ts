@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { auth, license, setToken, clearToken, ApiError } from "@/lib/api";
-import type { UserInfo } from "@/lib/types";
+import type { UserInfo, RegisterRequest, RegisterResponse } from "@/lib/types";
 
 interface AuthState {
   token: string | null;
@@ -15,6 +15,7 @@ interface AuthState {
 
   initialize: () => void;
   login: (username: string, password: string) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   dismissWarning: () => void;
@@ -72,6 +73,37 @@ export const useAuth = create<AuthState>((set, get) => ({
           : err instanceof Error
             ? err.message
             : "Login failed";
+      set({ isLoading: false, error: message });
+      throw err;
+    }
+  },
+
+  register: async (data: RegisterRequest) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await auth.register(data);
+      setToken(res.token);
+      set({
+        token: res.token,
+        user: {
+          id: res.user_id,
+          username: res.username,
+          display_name: res.display_name,
+          role: res.role,
+          is_active: true,
+          created_at: "",
+        },
+        seatId: res.seat_id,
+        isLoading: false,
+      });
+      return res;
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Registration failed";
       set({ isLoading: false, error: message });
       throw err;
     }

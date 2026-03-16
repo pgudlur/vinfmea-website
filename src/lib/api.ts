@@ -5,6 +5,8 @@
 
 import type {
   LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
   UserInfo,
   LicenseStatus,
   Project,
@@ -143,6 +145,12 @@ export const auth = {
     request<{ message: string }>("/api/auth/change-password", {
       method: "POST",
       body: JSON.stringify({ old_password, new_password }),
+    }),
+
+  register: (data: RegisterRequest) =>
+    request<RegisterResponse>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
   users: () => request<UserInfo[]>("/api/auth/users"),

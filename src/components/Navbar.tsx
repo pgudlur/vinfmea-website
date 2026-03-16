@@ -53,7 +53,7 @@ export function Navbar() {
               Contact
             </Link>
             <Link
-              href="/pricing"
+              href="/register"
               className="inline-flex items-center px-5 py-2 rounded-lg bg-[var(--blue-dark)] text-white text-sm font-semibold hover:bg-[#1D4ED8] transition-colors shadow-sm"
             >
               Start Free Trial
@@ -97,7 +97,7 @@ export function Navbar() {
             <Link href="/pricing" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded">Pricing</Link>
             <Link href="/#standards" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded">Standards</Link>
             <Link href="/#contact" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded">Contact</Link>
-            <Link href="/pricing" className="block px-3 py-2 text-sm font-semibold text-white bg-[var(--blue-dark)] rounded-lg text-center">Start Free Trial</Link>
+            <Link href="/register" className="block px-3 py-2 text-sm font-semibold text-white bg-[var(--blue-dark)] rounded-lg text-center">Start Free Trial</Link>
           </div>
         )}
       </div>

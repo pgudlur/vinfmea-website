@@ -19,6 +19,17 @@ export interface LoginResponse {
   seat_id: number;
 }
 
+export interface RegisterRequest {
+  customer_name: string;
+  customer_email: string;
+  company_name?: string;
+}
+
+export interface RegisterResponse extends LoginResponse {
+  license_key: string;
+  trial_ends_at: string;
+}
+
 export interface UserInfo {
   id: number;
   username: string;
