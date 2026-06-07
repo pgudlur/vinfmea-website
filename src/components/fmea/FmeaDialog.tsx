@@ -32,20 +32,22 @@ interface FmeaDialogProps {
 
 // ── Calculation helpers ────────────────────────────────────
 
-function calcAP(s: number, o: number, d: number): string {
-  // AIAG-VDA Action Priority logic table — exact port from desktop constants.py
+// Action Priority method: "heuristic" (default) or "aiag_vda" (official 2019
+// lookup). Build-time switch; keep it equal to the server's AP_METHOD so stored
+// and previewed AP agree.
+const AP_METHOD = (process.env.NEXT_PUBLIC_AP_METHOD || "heuristic").toLowerCase();
+
+function calcApHeuristic(s: number, o: number, d: number): string {
+  // Original vinFMEA S/O/D heuristic — exact port from desktop constants.py
   s = Math.max(1, Math.min(10, Math.floor(s || 1)));
   o = Math.max(1, Math.min(10, Math.floor(o || 1)));
   d = Math.max(1, Math.min(10, Math.floor(d || 1)));
 
-  // Safety-critical: S >= 9 always requires attention
   if (s >= 9) {
     if (o >= 4 || d >= 4) return "H";
     if (o >= 2 && d >= 2) return "H";
     return "M";
   }
-
-  // High severity: S >= 7
   if (s >= 7) {
     if (o >= 5 && d >= 5) return "H";
     if (o >= 4 && d >= 3) return "H";
@@ -53,24 +55,75 @@ function calcAP(s: number, o: number, d: number): string {
     if (o >= 3 || d >= 3) return "M";
     return "L";
   }
-
-  // Moderate severity: S >= 5
   if (s >= 5) {
     if (o >= 7 && d >= 7) return "H";
     if (o >= 8) return "H";
     if (o >= 4 || d >= 5) return "M";
     return "L";
   }
-
-  // Low severity: S >= 3
   if (s >= 3) {
     if (o >= 8 && d >= 7) return "H";
     if (o >= 5 || d >= 6) return "M";
     return "L";
   }
-
-  // Very low severity: S 1-2
   return "L";
+}
+
+// Official AIAG-VDA 2019 AP lookup table (DFMEA & PFMEA). Mirror of
+// server/calculations.py. >>> VERIFY cells against the handbook before relying
+// on this method; the heuristic stays the default (opt in via NEXT_PUBLIC_AP_METHOD).
+const AP_S_BANDS: [number, number][] = [[9, 10], [7, 8], [4, 6], [2, 3], [1, 1]];
+const AP_O_BANDS: [number, number][] = [[6, 10], [4, 5], [2, 3], [1, 1]];
+const AP_D_BANDS: [number, number][] = [[7, 10], [5, 6], [2, 4], [1, 1]];
+
+const AIAG_VDA_AP: Record<string, Record<string, Record<string, string>>> = {
+  "9-10": {
+    "6-10": { "7-10": "H", "5-6": "H", "2-4": "H", "1-1": "H" },
+    "4-5":  { "7-10": "H", "5-6": "H", "2-4": "H", "1-1": "H" },
+    "2-3":  { "7-10": "H", "5-6": "H", "2-4": "H", "1-1": "M" },
+    "1-1":  { "7-10": "H", "5-6": "H", "2-4": "M", "1-1": "L" },
+  },
+  "7-8": {
+    "6-10": { "7-10": "H", "5-6": "H", "2-4": "H", "1-1": "M" },
+    "4-5":  { "7-10": "H", "5-6": "H", "2-4": "M", "1-1": "M" },
+    "2-3":  { "7-10": "H", "5-6": "M", "2-4": "M", "1-1": "L" },
+    "1-1":  { "7-10": "M", "5-6": "M", "2-4": "L", "1-1": "L" },
+  },
+  "4-6": {
+    "6-10": { "7-10": "H", "5-6": "H", "2-4": "M", "1-1": "M" },
+    "4-5":  { "7-10": "H", "5-6": "M", "2-4": "M", "1-1": "L" },
+    "2-3":  { "7-10": "M", "5-6": "M", "2-4": "L", "1-1": "L" },
+    "1-1":  { "7-10": "M", "5-6": "L", "2-4": "L", "1-1": "L" },
+  },
+  "2-3": {
+    "6-10": { "7-10": "M", "5-6": "M", "2-4": "L", "1-1": "L" },
+    "4-5":  { "7-10": "M", "5-6": "L", "2-4": "L", "1-1": "L" },
+    "2-3":  { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+    "1-1":  { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+  },
+  "1-1": {
+    "6-10": { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+    "4-5":  { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+    "2-3":  { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+    "1-1":  { "7-10": "L", "5-6": "L", "2-4": "L", "1-1": "L" },
+  },
+};
+
+function apBand(v: number, bands: [number, number][]): string {
+  for (const [lo, hi] of bands) if (v >= lo && v <= hi) return `${lo}-${hi}`;
+  const last = bands[bands.length - 1];
+  return `${last[0]}-${last[1]}`;
+}
+
+function calcApAiagVda(s: number, o: number, d: number): string {
+  s = Math.max(1, Math.min(10, Math.floor(s || 1)));
+  o = Math.max(1, Math.min(10, Math.floor(o || 1)));
+  d = Math.max(1, Math.min(10, Math.floor(d || 1)));
+  return AIAG_VDA_AP[apBand(s, AP_S_BANDS)][apBand(o, AP_O_BANDS)][apBand(d, AP_D_BANDS)];
+}
+
+function calcAP(s: number, o: number, d: number): string {
+  return AP_METHOD === "aiag_vda" ? calcApAiagVda(s, o, d) : calcApHeuristic(s, o, d);
 }
 
 function calcCriticality(rpn: number): string {
