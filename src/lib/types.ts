@@ -431,6 +431,16 @@ export interface SyncSummary {
   sfmea_unlinked: number;
 }
 
+export interface FmeaLink {
+  id: number;
+  sfmea_id: number | null;
+  dfmea_id: number | null;
+  pfmea_id: number | null;
+  control_plan_id: number | null;
+  link_type: string;
+  sync_status: string;
+}
+
 export interface TraceabilityChain {
   sfmea: SfmeaEntry | null;
   dfmea: DfmeaEntry | null;
@@ -496,6 +506,12 @@ export interface SaasLicenseCreate {
   status?: string;
   trial_ends_at?: string | null;
   expires_at?: string | null;
+}
+
+export interface TrialStatus {
+  is_trial: boolean;
+  trial_ends_at: string | null;
+  days_remaining: number;
 }
 
 export interface SaasLicenseUpdate {
