@@ -70,7 +70,10 @@ export const useFmea = create<FmeaState>((set) => ({
       const entries = await api.list(params);
       set({ entries: entries as FmeaRow[], isLoading: false });
     } catch (err: unknown) {
+      // Clear stale entries so a failed load can't keep showing the previous
+      // type/project's rows as if they were current.
       set({
+        entries: [],
         isLoading: false,
         error: err instanceof Error ? err.message : "Failed to fetch entries",
       });

@@ -150,6 +150,10 @@ export const useAuth = create<AuthState>((set, get) => ({
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let listenersAttached = false;
 let lastUserActivity = Date.now();
+// Tolerate transient heartbeat failures (network blips); only warn after several
+// consecutive misses rather than dropping the session on the first one.
+let heartbeatFailures = 0;
+const MAX_HEARTBEAT_FAILURES = 3;
 
 function onUserActivity() {
   lastUserActivity = Date.now();
@@ -157,6 +161,7 @@ function onUserActivity() {
 
 export function startHeartbeat() {
   if (heartbeatInterval) return;
+  heartbeatFailures = 0;
 
   if (typeof window !== "undefined" && !listenersAttached) {
     window.addEventListener("mousemove", onUserActivity, { passive: true });
@@ -176,8 +181,12 @@ export function startHeartbeat() {
     if (elapsed < 10 * 60 * 1000) {
       try {
         await license.heartbeat();
+        heartbeatFailures = 0;
       } catch {
-        useAuth.setState({ sessionWarning: "expired" });
+        heartbeatFailures += 1;
+        if (heartbeatFailures >= MAX_HEARTBEAT_FAILURES) {
+          useAuth.setState({ sessionWarning: "expired" });
+        }
       }
     } else if (elapsed > 25 * 60 * 1000) {
       // 25+ minutes idle — warn about session expiring

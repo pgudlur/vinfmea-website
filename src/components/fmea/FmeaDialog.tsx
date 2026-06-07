@@ -429,6 +429,9 @@ export default function FmeaDialog({
                       <FormField label="Function" tooltip="Primary function of the part in the design">
                         <input {...register("function")} className={inputClass} placeholder="e.g. Controls ABS braking" />
                       </FormField>
+                      <FormField label="Requirement" tooltip="Design requirement the function must satisfy">
+                        <input {...register("requirement")} className={inputClass} placeholder="e.g. Must withstand 800°C" />
+                      </FormField>
                     </>
                   )}
                   {fmeaType === "pfmea" && (
@@ -438,6 +441,9 @@ export default function FmeaDialog({
                       </FormField>
                       <FormField label="Process Function" tooltip="What this process step is intended to accomplish">
                         <input {...register("process_function")} className={inputClass} placeholder="e.g. Solder components to PCB" />
+                      </FormField>
+                      <FormField label="Requirement" tooltip="Process requirement or specification to be met">
+                        <input {...register("requirement")} className={inputClass} placeholder="e.g. Surface finish Ra 0.8" />
                       </FormField>
                     </>
                   )}
