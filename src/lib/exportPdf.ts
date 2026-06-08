@@ -106,6 +106,24 @@ export async function exportToPdf({ entries, fmeaType, projectName, columns: opt
             data.cell.styles.textColor = [154, 52, 18];
           }
         }
+        // Color Criticality cells
+        const critColIdx = columns.findIndex((c) => c.key === "criticality");
+        if (data.column.index === critColIdx) {
+          const v = String(data.cell.raw);
+          if (v === "Critical") {
+            data.cell.styles.fillColor = [254, 202, 202];
+            data.cell.styles.textColor = [153, 27, 27];
+          } else if (v === "High") {
+            data.cell.styles.fillColor = [254, 215, 170];
+            data.cell.styles.textColor = [154, 52, 18];
+          } else if (v === "Medium") {
+            data.cell.styles.fillColor = [254, 249, 195];
+            data.cell.styles.textColor = [133, 77, 14];
+          } else if (v === "Low") {
+            data.cell.styles.fillColor = [220, 252, 231];
+            data.cell.styles.textColor = [22, 101, 52];
+          }
+        }
       }
     },
   });
