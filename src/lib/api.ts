@@ -36,6 +36,7 @@ import type {
   ProjectStats,
   FailureCause,
   SyncSummary,
+  FmeaLink,
   TraceabilityChain,
   AuditEntry,
   AdminDashboardSummary,
@@ -61,6 +62,7 @@ import type {
   NotificationSummary,
   ApprovalWorkflow,
   ApprovalStep,
+  TrialStatus,
 } from "./types";
 
 const API_URL =
@@ -154,6 +156,8 @@ export const auth = {
     }),
 
   users: () => request<UserInfo[]>("/api/auth/users"),
+
+  trialStatus: () => request<TrialStatus>("/api/auth/me/trial"),
 };
 
 // ── License ─────────────────────────────────────────────────
@@ -447,6 +451,17 @@ export const sync = {
     return request<SyncSummary>(`/api/sync-summary${qs}`);
   },
 
+  links: (projectId?: number) => {
+    const qs = projectId ? `?project_id=${projectId}` : "";
+    return request<FmeaLink[]>(`/api/links${qs}`);
+  },
+
+  resyncPfmeaFromDfmea: (dfmeaId: number) =>
+    request<{ pfmea_updated: number }>(
+      `/api/resync-pfmea-from-dfmea/${dfmeaId}`,
+      { method: "POST" }
+    ),
+
   traceability: (entryType: string, entryId: number) =>
     request<TraceabilityChain>(
       `/api/traceability/${entryType}/${entryId}`
@@ -454,7 +469,7 @@ export const sync = {
 
   createPfmeaFromDfmea: (data: {
     dfmea_id: number;
-    part_id?: number;
+    part_id: number;
   }) =>
     request<{ pfmea_id: number; step_id: string }>(
       "/api/create-pfmea-from-dfmea",

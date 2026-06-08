@@ -182,7 +182,7 @@ interface FmeaBase {
   new_occurrence: number;
   new_detection: number;
   new_rpn: number;
-  new_action_priority: string;
+  new_action_priority: string | null;
   notes: string;
   version: number;
   created_at: string;
@@ -219,6 +219,10 @@ export interface SfmeaCreate {
   current_prevention_controls?: string;
   current_detection_controls?: string;
   detection?: number;
+  action_taken?: string;
+  new_severity?: number;
+  new_occurrence?: number;
+  new_detection?: number;
   asil_rating?: string;
   safety_goal?: string;
   safety_mechanism?: string;
@@ -262,6 +266,10 @@ export interface DfmeaCreate {
   current_prevention_controls?: string;
   current_detection_controls?: string;
   detection?: number;
+  action_taken?: string;
+  new_severity?: number;
+  new_occurrence?: number;
+  new_detection?: number;
   asil_rating?: string;
   safety_goal?: string;
   safety_mechanism?: string;
@@ -301,6 +309,10 @@ export interface PfmeaCreate {
   current_prevention_controls?: string;
   current_detection_controls?: string;
   detection?: number;
+  action_taken?: string;
+  new_severity?: number;
+  new_occurrence?: number;
+  new_detection?: number;
   recommended_action?: string;
   responsibility?: string;
   target_date?: string;
@@ -431,6 +443,16 @@ export interface SyncSummary {
   sfmea_unlinked: number;
 }
 
+export interface FmeaLink {
+  id: number;
+  sfmea_id: number | null;
+  dfmea_id: number | null;
+  pfmea_id: number | null;
+  control_plan_id: number | null;
+  link_type: string;
+  sync_status: string;
+}
+
 export interface TraceabilityChain {
   sfmea: SfmeaEntry | null;
   dfmea: DfmeaEntry | null;
@@ -496,6 +518,12 @@ export interface SaasLicenseCreate {
   status?: string;
   trial_ends_at?: string | null;
   expires_at?: string | null;
+}
+
+export interface TrialStatus {
+  is_trial: boolean;
+  trial_ends_at: string | null;
+  days_remaining: number;
 }
 
 export interface SaasLicenseUpdate {
