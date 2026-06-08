@@ -16,7 +16,6 @@ import {
   FTTI_PRESETS,
   SPECIAL_CHAR_CLASSES,
 } from "@/lib/constants";
-import RatingCell from "./RatingCell";
 import ApBadge from "./ApBadge";
 import CriticalityBadge from "./CriticalityBadge";
 
@@ -568,8 +567,7 @@ export default function FmeaDialog({
                       <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-500">
                         RPN
                       </span>
-                      <RatingCell value={Math.min(rpn, 10)} />
-                      <span className="block text-sm font-bold text-gray-900 mt-0.5">
+                      <span className="block text-lg font-bold text-gray-900 mt-0.5">
                         {rpn}
                       </span>
                     </div>

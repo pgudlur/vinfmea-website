@@ -469,7 +469,7 @@ export const sync = {
 
   createPfmeaFromDfmea: (data: {
     dfmea_id: number;
-    part_id?: number;
+    part_id: number;
   }) =>
     request<{ pfmea_id: number; step_id: string }>(
       "/api/create-pfmea-from-dfmea",
