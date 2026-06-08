@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProjects } from "@/stores/useProjects";
 import { useUI } from "@/stores/useUI";
+import { sfmea, dfmea, pfmea, controlPlans } from "@/lib/api";
+import type { TreeFmeaEntry } from "@/components/projects/TreeView";
 import TreeView from "@/components/projects/TreeView";
 import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 import {
@@ -35,12 +37,38 @@ function ProjectDetailContent() {
   const [newAssemblyName, setNewAssemblyName] = useState("");
   const [addingPartFor, setAddingPartFor] = useState<number | null>(null);
   const [newPartName, setNewPartName] = useState("");
+  const [fmeaEntries, setFmeaEntries] = useState<TreeFmeaEntry[]>([]);
 
   useEffect(() => {
     if (projectId) {
       selectProject(projectId);
     }
   }, [projectId, selectProject]);
+
+  // Fetch all FMEA entries for the project to show in the tree
+  useEffect(() => {
+    if (!projectId) return;
+    async function fetchFmeaEntries() {
+      try {
+        const [sEntries, dEntries, pEntries, cpEntries] = await Promise.all([
+          sfmea.list({ project_id: projectId }).catch(() => []),
+          dfmea.list({ project_id: projectId }).catch(() => []),
+          pfmea.list({ project_id: projectId }).catch(() => []),
+          controlPlans.list({ project_id: projectId }).catch(() => []),
+        ]);
+        const all: TreeFmeaEntry[] = [
+          ...sEntries.map((e) => ({ ...e, _fmea_type: "sfmea" })),
+          ...dEntries.map((e) => ({ ...e, _fmea_type: "dfmea" })),
+          ...pEntries.map((e) => ({ ...e, _fmea_type: "pfmea" })),
+          ...cpEntries.map((e) => ({ ...e, _fmea_type: "control-plan" })),
+        ] as TreeFmeaEntry[];
+        setFmeaEntries(all);
+      } catch {
+        // Silently fail — tree just won't show FMEA entries
+      }
+    }
+    fetchFmeaEntries();
+  }, [projectId]);
 
   const handleAddAssembly = useCallback(async () => {
     if (!newAssemblyName.trim()) return;
@@ -181,6 +209,7 @@ function ProjectDetailContent() {
               setAddingPartFor(assemblyId);
               setNewPartName("");
             }}
+            fmeaEntries={fmeaEntries}
           />
 
           {/* Inline assembly form */}

@@ -8,6 +8,7 @@ import Header from "@/components/app/Header";
 import Toast from "@/components/ui/Toast";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import OnboardingWizard from "@/components/app/OnboardingWizard";
+import TrialBanner from "@/components/app/TrialBanner";
 
 // ── App Layout (protected) ──────────────────────────────────
 
@@ -82,6 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="h-screen flex overflow-hidden bg-[#F8FAFC]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
+        <TrialBanner />
         <Header />
         <main className="flex-1 overflow-auto p-6 main-scroll">
           <ErrorBoundary>
