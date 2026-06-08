@@ -5,12 +5,30 @@ import { ClipboardCheck, Download, FileSpreadsheet, FileText, Settings2, CheckSq
 import { useProjects } from "@/stores/useProjects";
 import { useUI } from "@/stores/useUI";
 import { sfmea, dfmea, pfmea, controlPlans } from "@/lib/api";
+import { REPORT_COLUMNS, columnsForKeys } from "@/lib/reportColumns";
+import type { FmeaType } from "@/lib/types";
 
 interface ReportSection {
   id: string;
   label: string;
   description: string;
   enabled: boolean;
+}
+
+// FMEA sections that have selectable columns, mapped to their export type.
+const SECTION_TO_FMEA: Record<string, FmeaType> = {
+  sfmea: "sfmea",
+  dfmea: "dfmea",
+  pfmea: "pfmea",
+  control_plan: "control-plan",
+};
+
+function initialSelectedCols(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [sid, ft] of Object.entries(SECTION_TO_FMEA)) {
+    out[sid] = REPORT_COLUMNS[ft].map((c) => c.key); // default: all columns
+  }
+  return out;
 }
 
 const DEFAULT_SECTIONS: ReportSection[] = [
@@ -32,12 +50,33 @@ export default function ReportBuilderPage() {
   const [sections, setSections] = useState<ReportSection[]>(DEFAULT_SECTIONS);
   const [format, setFormat] = useState<"excel" | "pdf">("excel");
   const [generating, setGenerating] = useState(false);
-  const [includeRevised, setIncludeRevised] = useState(true);
+  const [selectedCols, setSelectedCols] = useState<Record<string, string[]>>(initialSelectedCols);
+  const [expandedCols, setExpandedCols] = useState<string | null>(null);
 
   const toggleSection = (id: string) => {
     setSections((prev) =>
       prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s))
     );
+  };
+
+  const toggleCol = (sid: string, key: string) => {
+    const ft = SECTION_TO_FMEA[sid];
+    setSelectedCols((prev) => {
+      const cur = new Set(prev[sid] ?? []);
+      if (cur.has(key)) cur.delete(key);
+      else cur.add(key);
+      // keep catalog order
+      const ordered = REPORT_COLUMNS[ft].map((c) => c.key).filter((k) => cur.has(k));
+      return { ...prev, [sid]: ordered };
+    });
+  };
+
+  const setAllCols = (sid: string, all: boolean) => {
+    const ft = SECTION_TO_FMEA[sid];
+    setSelectedCols((prev) => ({
+      ...prev,
+      [sid]: all ? REPORT_COLUMNS[ft].map((c) => c.key) : [],
+    }));
   };
 
   const enabledCount = sections.filter((s) => s.enabled).length;
@@ -76,7 +115,12 @@ export default function ReportBuilderPage() {
         ];
         for (const { data, fmeaType, id } of excelTypes) {
           if (data.length > 0 && enabledIds.has(id)) {
-            await exportToExcel({ entries: data as Record<string, unknown>[], fmeaType, projectName: currentProject.name });
+            await exportToExcel({
+              entries: data as Record<string, unknown>[],
+              fmeaType,
+              projectName: currentProject.name,
+              columns: columnsForKeys(fmeaType, selectedCols[id] ?? []),
+            });
           }
         }
 
@@ -91,7 +135,12 @@ export default function ReportBuilderPage() {
         ];
         for (const { data, fmeaType, id } of pdfTypes) {
           if (data.length > 0 && enabledIds.has(id)) {
-            await exportToPdf({ entries: data as Record<string, unknown>[], fmeaType, projectName: currentProject.name });
+            await exportToPdf({
+              entries: data as Record<string, unknown>[],
+              fmeaType,
+              projectName: currentProject.name,
+              columns: columnsForKeys(fmeaType, selectedCols[id] ?? []),
+            });
           }
         }
         addToast({ type: "success", message: "PDF report(s) downloaded" });
@@ -141,30 +190,69 @@ export default function ReportBuilderPage() {
               </div>
             </div>
             <div className="space-y-2">
-              {sections.map((section) => (
-                <label
-                  key={section.id}
-                  className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                    section.enabled ? "border-blue-200 bg-blue-50/50" : "border-gray-200 bg-white hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={section.enabled}
-                    onChange={() => toggleSection(section.id)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div>
-                    <p className={`text-sm font-medium ${section.enabled ? "text-gray-900" : "text-gray-600"}`}>
-                      {section.label}
-                    </p>
-                    <p className="text-xs text-gray-500">{section.description}</p>
+              {sections.map((section) => {
+                const ft = SECTION_TO_FMEA[section.id];
+                const isFmea = !!ft;
+                const colKeys = isFmea ? (selectedCols[section.id] ?? []) : [];
+                const total = isFmea ? REPORT_COLUMNS[ft].length : 0;
+                const open = expandedCols === section.id;
+                return (
+                  <div
+                    key={section.id}
+                    className={`rounded-lg border transition-colors ${
+                      section.enabled ? "border-blue-200 bg-blue-50/50" : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 p-3">
+                      <input
+                        type="checkbox"
+                        checked={section.enabled}
+                        onChange={() => toggleSection(section.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium ${section.enabled ? "text-gray-900" : "text-gray-600"}`}>
+                          {section.label}
+                        </p>
+                        <p className="text-xs text-gray-500">{section.description}</p>
+                      </div>
+                      {isFmea && section.enabled ? (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedCols(open ? null : section.id)}
+                          className="ml-auto shrink-0 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                        >
+                          Columns ({colKeys.length}/{total}) {open ? "▴" : "▾"}
+                        </button>
+                      ) : (
+                        section.enabled && <CheckSquare size={16} className="ml-auto text-blue-500 shrink-0" />
+                      )}
+                    </div>
+                    {isFmea && section.enabled && open && (
+                      <div className="border-t border-gray-100 px-3 py-3">
+                        <div className="mb-2 flex gap-2 text-xs">
+                          <button type="button" onClick={() => setAllCols(section.id, true)} className="text-blue-600 hover:text-blue-700">All</button>
+                          <span className="text-gray-300">|</span>
+                          <button type="button" onClick={() => setAllCols(section.id, false)} className="text-gray-500 hover:text-gray-700">None</button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+                          {REPORT_COLUMNS[ft].map((c) => (
+                            <label key={c.key} className="flex items-center gap-1.5 text-xs text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={colKeys.includes(c.key)}
+                                onChange={() => toggleCol(section.id, c.key)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="truncate">{c.header}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {section.enabled && (
-                    <CheckSquare size={16} className="ml-auto text-blue-500 shrink-0" />
-                  )}
-                </label>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -213,18 +301,14 @@ export default function ReportBuilderPage() {
             </div>
           </div>
 
-          {/* Options */}
+          {/* Columns hint */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Options</h3>
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includeRevised}
-                onChange={(e) => setIncludeRevised(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              Include revised ratings
-            </label>
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Columns</h3>
+            <p className="text-xs text-gray-500">
+              Use the <span className="font-medium">Columns</span> button on each FMEA
+              section to choose exactly which fields appear in the report. All columns
+              (including revised ratings) are included by default.
+            </p>
           </div>
 
           {/* Generate */}

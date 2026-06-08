@@ -4,11 +4,14 @@
  */
 
 import type { FmeaType } from "./types";
+import { getReportColumns, type ReportColumn } from "./reportColumns";
 
 interface PdfExportOptions {
   entries: Record<string, unknown>[];
   fmeaType: FmeaType;
   projectName?: string;
+  /** Columns to include; defaults to the full catalog for the type. */
+  columns?: ReportColumn[];
 }
 
 const FMEA_TYPE_LABELS: Record<string, string> = {
@@ -18,62 +21,12 @@ const FMEA_TYPE_LABELS: Record<string, string> = {
   "control-plan": "Control Plan",
 };
 
-// Simplified column set for PDF (narrower than Excel)
-const PDF_COLUMNS: Record<string, { header: string; key: string }[]> = {
-  sfmea: [
-    { header: "Step ID", key: "step_id" },
-    { header: "System Element", key: "system_element" },
-    { header: "Failure Mode", key: "failure_mode" },
-    { header: "S", key: "severity" },
-    { header: "O", key: "occurrence" },
-    { header: "D", key: "detection" },
-    { header: "RPN", key: "rpn" },
-    { header: "AP", key: "action_priority" },
-    { header: "ASIL", key: "asil_rating" },
-    { header: "Status", key: "action_status" },
-  ],
-  dfmea: [
-    { header: "Step ID", key: "step_id" },
-    { header: "Part Name", key: "part_name" },
-    { header: "Failure Mode", key: "failure_mode" },
-    { header: "S", key: "severity" },
-    { header: "O", key: "occurrence" },
-    { header: "D", key: "detection" },
-    { header: "RPN", key: "rpn" },
-    { header: "AP", key: "action_priority" },
-    { header: "Criticality", key: "criticality" },
-    { header: "Status", key: "action_status" },
-  ],
-  pfmea: [
-    { header: "Step ID", key: "step_id" },
-    { header: "Process Step", key: "process_step" },
-    { header: "Failure Mode", key: "failure_mode" },
-    { header: "S", key: "severity" },
-    { header: "O", key: "occurrence" },
-    { header: "D", key: "detection" },
-    { header: "RPN", key: "rpn" },
-    { header: "AP", key: "action_priority" },
-    { header: "CTQ", key: "init_ctq" },
-    { header: "Status", key: "action_status" },
-  ],
-  "control-plan": [
-    { header: "Step ID", key: "step_id" },
-    { header: "Process Step", key: "process_step" },
-    { header: "Product Char", key: "product_characteristic" },
-    { header: "Process Char", key: "process_characteristic" },
-    { header: "Spec Class", key: "special_char_class" },
-    { header: "Spec/Tolerance", key: "specification_tolerance" },
-    { header: "Control Method", key: "control_method" },
-    { header: "Reaction Plan", key: "reaction_plan" },
-  ],
-};
-
-export async function exportToPdf({ entries, fmeaType, projectName }: PdfExportOptions) {
+export async function exportToPdf({ entries, fmeaType, projectName, columns: optColumns }: PdfExportOptions) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
 
   const label = FMEA_TYPE_LABELS[fmeaType] ?? fmeaType.toUpperCase();
-  const columns = PDF_COLUMNS[fmeaType] ?? PDF_COLUMNS["dfmea"];
+  const columns = optColumns && optColumns.length > 0 ? optColumns : getReportColumns(fmeaType);
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -115,7 +68,9 @@ export async function exportToPdf({ entries, fmeaType, projectName }: PdfExportO
     styles: {
       fontSize: 7,
       cellPadding: 2,
+      overflow: "linebreak",
     },
+    tableWidth: "auto",
     headStyles: {
       fillColor: [30, 41, 59],
       textColor: [255, 255, 255],
